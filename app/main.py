@@ -73,7 +73,7 @@ async def origin_guard(req,call_next):
     return res
 
 @app.get('/',response_class=HTMLResponse)
-def index(request:Request):return templates.TemplateResponse('index.html',{'request':request,'is_demo':DEMO})
+def index(request:Request):return templates.TemplateResponse(request=request,name='index.html',context={'is_demo':DEMO})
 @app.get('/demo-anterior')
 def legacy():
     if not DEMO:fail('No disponible fuera del entorno de demostración.',404)
