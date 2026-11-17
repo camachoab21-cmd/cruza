@@ -1,5 +1,9 @@
 # CRUZA 3 · Campus académico interactivo
 
+**EXPOSICIÓN:** [Abrir la guía de presentación, usuarios y alternativa de emergencia](PRESENTAR-AHORA.md). [Video del recorrido](docs/CRUZA3-VISITA-GUIADA.mp4) · [Capturas](docs/capturas/estudiante.jpg).
+
+**Estado verificado (17 de noviembre de 2026):** publicado en `camachoab21-cmd/cruza`, rama `main`, con pruebas de GitHub Actions completadas correctamente. Cuenta conectada `camachoab21-cmd`; colaborador `ISFRANT` con permiso `write`. La navegación HTTP directa en el PC de Windows sigue pendiente de una comprobación final.
+
 **Prototipo independiente y no oficial para presentación académica — datos ficticios.**
 
 CRUZA transforma una experiencia de gestión académica en un crucigrama interactivo. El proyecto conserva **dos entregables distintos**:
@@ -94,17 +98,19 @@ $env:CRUZA_DEMO_MODE='1'
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Se ejecutaron **19 pruebas automáticas de API y lógica**, un recorrido de integración Chromium/frontend con **26 solicitudes procesadas por el servidor HTTP real** y pruebas adicionales de acceso, matrícula, docente, administración y móvil. También existen **4 recorridos visuales aislados** históricos. La grabación nueva `docs/CRUZA3-RECORRIDO-VISUAL.mp4` muestra la interfaz de CRUZA 3 con transporte simulado; la anterior permanece bajo `docs/DEMOSTRACION-ANTERIOR.mp4`.
+Se ejecutaron **20 pruebas automáticas de API y lógica**, un recorrido de integración Chromium/frontend con **26 solicitudes procesadas por el servidor HTTP real** y pruebas adicionales de acceso, matrícula, docente, administración y móvil. También existen **4 recorridos visuales aislados** históricos. El video incluido en GitHub, `docs/CRUZA3-VISITA-GUIADA.mp4`, muestra la interfaz mediante una secuencia de capturas de acciones verificadas. No es una grabación continua del uso real en Windows.
 
 En `tests/ui_smoke.py` hay una prueba visual aislada en Chromium (con datos auténticos de la API y transporte simulado **por las restricciones de localhost del entorno de desarrollo**). **No sustituye** probar la web real en Chromium en tu PC; prueba el recorrido completo en `http://127.0.0.1:8765` antes de la exposición.
 
 ## Publicación y colaboración
 
-El proyecto está preparado para el repositorio https://github.com/camachoab21-cmd/cruza. `PUBLICAR-GITHUB.ps1` verifica la URL del remoto, protege los archivos existentes, muestra los cambios y hace `push` solo al recibir `PUBLICAR`. El script **no invita colaboradores automáticamente**. Invita a `ISFRANT` desde `Settings → Collaborators → Add people`, elige **Write** para lectura y edición, y espera la aceptación de su invitación.
-
-No guardes contraseñas, `.env` o `data/` en el repositorio. El HTML autónomo y el servidor local cumplen propósitos distintos; publicar en GitHub Pages solo publica el HTML estático, **no** el backend de FastAPI ni SQLite.
-
-Continúa el desarrollo utilizando `CONTINUIDAD.md` y los requisitos de `REGLAS_NEGOCIO.md`.
+- **Repositorio actualizado y verificado:** <https://github.com/camachoab21-cmd/cruza> (rama `main`).
+- Se confirmó mediante la conexión de GitHub del propietario `camachoab21-cmd`, con permisos de escritura y administración. El colaborador `ISFRANT` tiene permiso `write` verificado.
+- **Pruebas automáticas en GitHub Actions:** [.github/workflows/tests.yml](.github/workflows/tests.yml), que se ejecutan con cada `push` y `pull_request` de `main`.
+- Evidencias incluidas: [capturas](docs/capturas/estudiante.jpg) y [visita guiada](docs/CRUZA3-VISITA-GUIADA.mp4) de 46 segundos; `VER-RECORRIDO.html` permite elegir capítulos después de descargar el proyecto.
+- No guardes contraseñas, `.env`, `.venv` ni `data/` en GitHub.
+- El archivo `index.html` es una **demostración visual autónoma** sin seguridad real. GitHub Pages solo puede publicar ese HTML estático. La aplicación **FastAPI/SQLite** funciona mediante servidor local y **no tiene despliegue público verificado**.
+- Para preparar la presentación: [PRESENTAR-AHORA.md](PRESENTAR-AHORA.md).
 
 ## Mejoras y evidencias de esta entrega
 
@@ -114,4 +120,3 @@ Continúa el desarrollo utilizando `CONTINUIDAD.md` y los requisitos de `REGLAS_
 - `VERIFICACION.md` identifica pruebas, resultados y límites.
 - Se entregan `VER-RECORRIDO.html` y la visita guiada MP4 con capítulos.
 
-**No se ha publicado esta entrega en GitHub:** la cuenta GitHub conectada a este chat tiene permiso de lectura, no de escritura. Para invitar a `ISFRANT` también es necesaria una sesión del propietario con privilegios de administración del repositorio.
