@@ -7,7 +7,7 @@ const state={user:null,csrf:null,data:null,page:'tablero',busy:false,loginShow:f
   ambientTool:'brush',ambientEnabled:true,loginUser:'',loginPass:''};
 const roleMenu={student:[['tablero','Mi tablero'],['pensum','Pensum'],['inscripcion','Inscripción'],
  ['horario','Horario'],['calendario','Calendario'],['agenda','Mi agenda'],['notas','Notas'],
- ['asistencia','Asistencia'],['historial','Historial'],['perfil','Perfil']],
+ ['historial','Historial'],['perfil','Perfil']],
  teacher:[['notas','Notas'],['asistencia','Asistencia']],
  admin:[['estudiantes','Estudiantes'],['recuperacion','Recuperación'],['catalogo','Catálogo'],['auditoria','Auditoría']]};
 const roleNames={student:'Estudiante',teacher:'Docente',admin:'Administrador'};
@@ -164,7 +164,7 @@ function crossword(){const grid=new Map(),words=[
  <h2>Todo <em>conecta.</em></h2><p class="small muted">Selecciona una palabra para revelar su módulo. En las intersecciones puedes elegir el camino.</p>
  <div class="board-tiles" role="group" aria-label="Crucigrama de navegación">
  ${Array.from({length:81},(_,i)=>{const r=Math.floor(i/9),c=i%9,cell=grid.get(`${r}-${c}`);
-  return cell?`<button type="button" class="board-tile" data-action="word" data-path="${cell.routes.join('|')}" data-hint="Casilla ${cell.letter}: ${cell.routes.join(', ')}" aria-label="Letra ${cell.letter}; ${cell.routes.join(' o ')}">${cell.letter}</button>`:'<span class="board-tile void" aria-hidden="true"></span>'}).join('')}</div></div>
+  return cell?`<button type="button" class="board-tile" style="--tile-i:${i}" data-action="word" data-path="${cell.routes.join('|')}" data-hint="Casilla ${cell.letter}: ${cell.routes.join(', ')}" aria-label="Letra ${cell.letter}; ${cell.routes.join(' o ')}">${cell.letter}</button>`:'<span class="board-tile void" aria-hidden="true"></span>'}).join('')}</div></div>
  <div class="board-clues"><span class="eyebrow">PALABRAS</span>${words.map((w,i)=>linkRoute(`${String(i+1).padStart(2,'0')} ${w.name}`,w.route,'btn-mini')).join('')}</div><canvas id="powder" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0"></canvas></section>`}
 function dashboard(){const d=state.data;const courses=d.draft.confirmed;const next=courses[0];
  return head('01 · HORIZONTAL','Tu semestre. <em>Todas las piezas.</em>',`Hola, ${escapeHtml(state.user.full_name)}. Cada palabra te guía al siguiente paso en el tablero.`,linkRoute('Inscribir materias ↗','inscripcion','btn-primary'))+
@@ -176,8 +176,8 @@ function dashboard(){const d=state.data;const courses=d.draft.confirmed;const ne
  <div class="item"><strong>Agenda</strong><span>${d.agenda.filter(x=>!x.done).length} pendientes</span></div></div>
  <div class="actions">${linkRoute('Abrir horario ↗','horario','btn-lime')}${linkRoute('Ver agenda','agenda')}</div></section></div>
  <div class="stats">${stat('CRÉDITOS INSCRITOS',d.summary.credits_current,'Créditos enteros')}
- ${stat('PAPA (ACUMULADO)',number(d.summary.papa),'Promedio ponderado acumulado','purple')}
- ${stat('PAPI (PERÍODO)',number(d.summary.papi),'Solo notas definitivas disponibles','peach')}</div>`;
+ ${stat('PROMEDIO ACUMULADO',number(d.summary.papa),'Promedio ponderado acumulado','purple')}
+ ${stat('PROMEDIO DEL PERÍODO',number(d.summary.papi),'Solo notas definitivas disponibles','peach')}</div>`;
 }
 function curriculum(){const d=state.data;const offered=new Set(d.groups.map(x=>x.course_id));const sems=[...new Set(d.courses.map(x=>x.semester))];
  return head('02 · VERTICAL','El plan de <em>tus piezas.</em>','Rutas académicas y asignaturas por semestre.',linkRoute('Ir a Inscripción →','inscripcion','btn-primary'))+
@@ -192,7 +192,7 @@ function conflictsFor(groups){const out=[];for(let i=0;i<groups.length;i++)for(l
 function timeGrid(groups,confirmed=[],compact=false){const all=[...groups,...confirmed.filter(x=>!groups.some(g=>g.course_id===x.course_id))];
  const issues=conflictsFor(groups);const conflictIds=new Set(issues.flatMap(x=>[x.a,x.b]));const currentIds=new Set(confirmed.map(x=>x.group_id||x.id));
  const rows=['08:00','10:00','12:00','14:00','16:00','18:00'];
- let html='<div class="table-scroll"><table class="schedule-table"><thead><tr><th>HORA</th>'+
+ let html=`<div class="${compact?'table-fit':'table-scroll'}"><table class="schedule-table ${compact?'compact':''}"><thead><tr><th>HORA</th>`+
  shortDay.slice(0,5).map(day=>`<th>${day}</th>`).join('')+'</tr></thead><tbody>';
  for(const hour of rows){html+=`<tr><th>${hour}</th>`;for(const day of shortDay.slice(0,5)){
  const events=all.filter(g=>g.sessions.some(s=>s.day===day&&s.start<=hour&&s.end>hour));
@@ -222,8 +222,8 @@ function enrollment(){const d=state.data,selected=d.draft.selected;let courses=d
  return `<article class="card course-card" id="course-${c.id}"><div class="course-head"><div><div class="eyebrow">${escapeHtml(c.code)} / SEMESTRE ${c.semester}</div>
  <h3>${escapeHtml(c.name)}</h3></div>${labelTag(`${c.credits} créditos`,'lime')}</div>
  <div class="row-left">${labelTag(c.category,tagCat(c.category))}${chosen?labelTag('En borrador','ok'):''}</div>
- ${gs.length?`<div class="field"><label for="grp-${c.id}">Grupo, docente y franjas</label><select id="grp-${c.id}" data-course-id="${c.id}">
- ${gs.map(g=>`<option value="${g.id}" ${chosen?.id===g.id?'selected':''}>${g.code} · ${g.teacher||'Sin docente'} · ${g.sessions.map(s=>`${s.day} ${s.start}-${s.end}`).join(' / ')}</option>`).join('')}</select></div>
+ ${gs.length?`<div class="field"><label for="grp-${c.id}">Grupo y horario asignado</label><select id="grp-${c.id}" data-course-id="${c.id}">
+ ${gs.map(g=>`<option value="${g.id}" ${chosen?.id===g.id?'selected':''}>GRUPO ${g.code} · ${g.sessions.map(s=>`${s.day} ${s.start}-${s.end}`).join(' / ')}</option>`).join('')}</select></div>
  <div class="small muted">${escapeHtml(gs.map(g=>g.room).join(', '))}</div>
  <div class="actions">${chosen?btn('Retirar del borrador','toggle-course','btn-mini btn-danger',`data-course-id="${c.id}"`):
  btn('Añadir al borrador +','toggle-course','btn-lime btn-mini',`data-course-id="${c.id}"`)}</div>`:
@@ -260,7 +260,7 @@ function calendar(){const acts=state.data.activities;const today=state.calendarD
  }
  const list=acts.filter(a=>a.due_date===today);
  return head('06 · VERTICAL','Calendario. <em>Casillas del mes.</em>','Diagonal roja: atrasada; naranja: pendiente; verde: entregada.',linkRoute('Abrir Mi agenda →','agenda'))+
- `<div class="grid-2"><section class="card"><div class="between"><h2>${first.toLocaleDateString('es-CO',{month:'long',year:'numeric'})}</h2>${btn('Mes de noviembre 2026','demo-month','btn-mini')}</div>
+ `<div class="grid-2"><section class="card canvas-grid"><div class="between"><div class="cal-nav"><button type="button" class="btn-mini" data-action="cal-prev-month" aria-label="Mes anterior">←</button><h2 style="margin:0;font-size:1.3rem;text-transform:capitalize">${first.toLocaleDateString('es-CO',{month:'long',year:'numeric'})}</h2><button type="button" class="btn-mini" data-action="cal-next-month" aria-label="Mes siguiente">→</button></div><div class="row-left">${btn('Nov 2026','demo-month','btn-mini')}</div></div>
  <div class="calendar">${cells}</div></section>
  <section class="card"><div class="eyebrow">ACTIVIDADES DEL DÍA</div><h2>${escapeHtml(today)}</h2>
  ${list.length?list.map(a=>`<div class="item"><div><strong>${escapeHtml(a.title)}</strong><div class="small muted">${escapeHtml(a.course)} · ${escapeHtml(a.state)}</div></div>
@@ -269,9 +269,10 @@ function calendar(){const acts=state.data.activities;const today=state.calendarD
 }
 function agendaPage(){const all=state.data.agenda;const list=all.filter(x=>state.agendaDone?x.done:!x.done);
  return head('07 · HORIZONTAL','Mi agenda. <em>Pistas pendientes.</em>','Tus tareas y recordatorios organizados por fecha.',btn('Nueva tarea o recordatorio +','agenda-new','btn-primary'))+
- `<div class="card"><div class="actions" style="margin-top:0;margin-bottom:12px">${btn('Próximos','agenda-toggle-done','btn-mini',`data-done="false"`)}
- ${btn('Completados','agenda-toggle-done','btn-mini',`data-done="true"`)}</div>
- ${list.length?list.map(x=>`<div class="agenda-entry ${x.done?'done':''}"><div><div class="mon">${escapeHtml(x.due_date)} ${escapeHtml(x.due_time||'')}</div>
+ `<div class="card canvas-grid"><div class="between" style="margin-bottom:16px"><div class="eyebrow">PISTAS DEL DÍA A DÍA</div><div class="actions" style="margin-top:0">
+ ${btn('Próximos','agenda-toggle-done','btn-mini',`data-done="false"`)}
+ ${btn('Completados','agenda-toggle-done','btn-mini',`data-done="true"`)}</div></div>
+ ${list.length?list.map((x,i)=>`<div class="agenda-entry ${x.done?'done':''}"><div class="agenda-clue-num">${String(i+1).padStart(2,'0')}</div><div><div class="mon">${escapeHtml(x.due_date)} ${escapeHtml(x.due_time||'')}</div>
  <h3>${escapeHtml(x.title)}</h3><p class="small muted" style="margin:0">${escapeHtml(x.description||'')} · ${x.source==='personal'?'Personal':'Académica'}</p></div>
  <div class="actions">${btn('Editar','agenda-edit','btn-mini',`data-agenda-id="${x.id}"`)}
  ${btn(x.done?'Reabrir':'Completar','agenda-complete','btn-mini',`data-agenda-id="${x.id}" data-done="${x.done?'false':'true'}"`)}
@@ -286,7 +287,7 @@ function crosswordCalculator(all){
  const c1=c.summary.cuts[1]?.complete?c.summary.cuts[1].grade:4.0;
  const c2=c.summary.cuts[2]?.complete?c.summary.cuts[2].grade:4.0;
  const c3=targetScore;
- const simulated=(c1*0.3)+(c2*0.3)+(c3*0.4);
+ const simulated=(c1*0.33)+(c2*0.33)+(c3*0.34);
  const codeTiles=(c.code||'WEB').toUpperCase().replace(/[^A-Z0-9]/g,'').split('').map(l=>`<span class="word-tile">${l}</span>`).join('');
  return `<section class="crossword-calc"><div class="between" style="align-items:flex-start">
  <div><div class="eyebrow">PISTA ESPECIAL · CÁLCULO DE CRUCIGRAMA</div>
@@ -296,11 +297,11 @@ function crosswordCalculator(all){
  <select id="simulate-course" data-action="sim-select-course">
  ${all.map(x=>`<option value="${x.course_id}" ${x.course_id===selectedId?'selected':''}>${escapeHtml(x.name)}</option>`).join('')}</select></div></div>
  <div class="calc-equation">
-   <div class="calc-tile"><span class="calc-num">01</span><span class="calc-pct">CORTE 1 · 30%</span><span class="calc-val">${number(c1)}</span></div>
+   <div class="calc-tile"><span class="calc-num">01</span><span class="calc-pct">CORTE 1 · 33%</span><span class="calc-val">${number(c1)}</span></div>
    <span class="calc-operator">+</span>
-   <div class="calc-tile"><span class="calc-num">02</span><span class="calc-pct">CORTE 2 · 30%</span><span class="calc-val">${number(c2)}</span></div>
+   <div class="calc-tile"><span class="calc-num">02</span><span class="calc-pct">CORTE 2 · 33%</span><span class="calc-val">${number(c2)}</span></div>
    <span class="calc-operator">+</span>
-   <div class="calc-tile unknown"><span class="calc-num">03 ?</span><span class="calc-pct">CORTE 3 · 40%</span><span class="calc-val" id="sim-target-val">${number(c3)}</span></div>
+   <div class="calc-tile unknown"><span class="calc-num">03 ?</span><span class="calc-pct">CORTE 3 · 34%</span><span class="calc-val" id="sim-target-val">${number(c3)}</span></div>
    <span class="calc-operator">=</span>
    <div class="calc-tile result"><span class="calc-num">DEF</span><span class="calc-pct">DEFINITIVA RESUELTA</span><span class="calc-val" id="simulate-result">${number(simulated)}</span></div>
  </div>
@@ -313,20 +314,30 @@ function crosswordCalculator(all){
    ${btn('Calcular estimación','simulate','btn-lime btn-mini','style="display:none"')}
  </div></section>`;
 }
-function gradesPage(){const d=state.data;const all=d.grades;
+function gradesPage(){const d=state.data;const all=d.grades;const att=d.attendance||[];const absences=att.filter(x=>!x.present);
+ const attByCourse=att.reduce((acc,cur)=>{(acc[cur.course]=acc[cur.course]||[]).push(cur);return acc},{});
  return head('05 · HORIZONTAL','Notas y Calificaciones. <em>Cada avance cuenta.</em>','Cada casilla resuelta completa tu mapa académico del período.')+
- `<div class="stats">${stat('PAPA · ACUMULADO',number(d.summary.papa),'Histórico + finales del período')}
- ${stat('PAPI · PERÍODO',number(d.summary.papi),'Solo materias con nota definitiva','purple')}
+ `<div class="stats">${stat('PROMEDIO ACUMULADO',number(d.summary.papa),'Histórico + finales del período')}
+ ${stat('PROMEDIO DEL PERÍODO',number(d.summary.papi),'Solo materias con nota definitiva','purple')}
  ${stat('CRÉDITOS CURSADOS',d.summary.credits_hist,'Créditos de historial','peach')}</div>
  <div class="courses">${all.map(c=>`<article class="course-grades-card"><div class="course-grades-head">
  <div><div class="eyebrow">${escapeHtml(c.code)} · ${c.credits} CRÉDITOS</div><h2 style="margin:5px 0 0">${escapeHtml(c.name)}</h2></div>
  <div class="def-tile" title="Nota definitiva"><span class="def-label">DEFINITIVA</span><span class="def-val">${number(c.summary.final)}</span></div></div>
- <div class="corte-tiles">${[1,2,3].map(t=>{const cut=c.summary.cuts[t],isComplete=cut.complete,pct=t===3?'40%':'30%';
+ <div class="corte-tiles">${[1,2,3].map(t=>{const cut=c.summary.cuts[t],isComplete=cut.complete,pct=t===3?'34%':'33%';
  return `<div class="corte-cell ${isComplete?'complete':'pending'}"><div class="corte-header"><span class="corte-tag">Corte ${t}</span>
  <span class="corte-pct">${pct}</span></div><div class="corte-val">${isComplete?number(cut.grade):'—'}</div></div>`;}).join('')}</div>
+ <div class="tiny muted" style="font-family:Consolas,monospace;background:var(--wash);padding:4px 8px;border-radius:5px">Ponderación del corte: 30% Trabajos independientes · 60% Parcial · 10% Autoevaluación</div>
  <div class="corte-evals">${c.evaluations.map(e=>`${escapeHtml(e.name)}: <strong>${e.grade===null?'Pendiente':number(e.grade)}</strong>`).join(' &nbsp;·&nbsp; ')}</div>
  </article>`).join('')}</div>
- ${crosswordCalculator(all)}`;
+ ${crosswordCalculator(all)}
+ <section class="card canvas-grid" style="margin-top:24px"><div class="between"><div><div class="eyebrow">CONTROL DE ASISTENCIAS E INASISTENCIAS</div><h2 style="margin:4px 0 0">Presencia <em>en clase.</em></h2></div>
+ <div class="row-left"><span class="pill ${absences.length?'danger':'ok'}">${absences.length} ${absences.length===1?'inasistencia':'inasistencias'} registradas</span></div></div>
+ ${att.length?`<div class="attendance-summary">${Object.entries(attByCourse).map(([courseName,rows])=>{
+ const courseAbs=rows.filter(r=>!r.present).length;
+ return `<div class="attendance-card ${courseAbs?'has-absence':''}"><div class="between"><strong>${escapeHtml(courseName)}</strong>
+ ${courseAbs?`<span class="absence-pill">⚠️ ${courseAbs} ${courseAbs===1?'falta':'faltas'}</span>`:`<span class="pill ok">Sin faltas</span>`}</div>
+ <div class="attendance-tiles">${rows.map(r=>`<span class="tile-badge ${r.present?'presente':'ausente'}" title="${escapeHtml(r.day)}: ${r.present?'Presente':'Ausente'}">${r.present?'P':'A'}</span>`).join('')}</div></div>`;
+ }).join('')}</div>`:'<div class="notice">No hay registros de asistencia para el período vigente.</div>'}</section>`;
 }
 function studentAttendance(){const rows=state.data.attendance||[];
  return head('08 · VERTICAL','Asistencia. <em>Presencia en cada clase.</em>','Registro de asistencias y ausencias del período actual.')+
@@ -338,20 +349,28 @@ function studentAttendance(){const rows=state.data.attendance||[];
 }
 function historyPage(){const d=state.data,rows=d.summary.history;
  return head('09 · HORIZONTAL','Historial. <em>Lo aprendido permanece.</em>','Historial consolidado de calificaciones y créditos cursados.')+
- `<div class="stats">${stat('PAPA',number(d.summary.papa),'Acumulado ponderado por créditos','purple')}
- ${stat('CRÉDITOS APROBADOS',d.summary.credits_approved,'Historial + definitivas aprobadas','lime')}
- ${stat('PUNTOS PONDERADOS',number(d.summary.weighted_points),'Suma nota × créditos')}</div>
+ `<div class="stats" style="grid-template-columns:repeat(2,minmax(0,1fr))">${stat('PROMEDIO ACUMULADO',number(d.summary.papa),'Acumulado ponderado por créditos','purple')}
+ ${stat('CRÉDITOS APROBADOS',d.summary.credits_approved,'Historial + definitivas aprobadas','lime')}</div>
  <div class="card"><div class="table-scroll"><table class="table"><thead><tr><th>Período</th><th>Materia</th><th>Créditos</th><th>Definitiva</th></tr></thead><tbody>
  ${rows.map(r=>`<tr><td>${escapeHtml(r.period)}</td><td>${escapeHtml(r.name)}<div class="tiny muted">${escapeHtml(r.code)}</div></td>
  <td>${r.credits}</td><td><span class="grade-val">${number(r.grade)}</span></td></tr>`).join('')}</tbody></table></div></div>`;
 }
-function profilePage(){const u=state.data.profile;
+function profilePage(){const u=state.data.profile;const s=state.data.summary;
+ const nameTiles=(u.full_name||'CRUZA').toUpperCase().replace(/[^A-Z]/g,'').slice(0,8).split('').map((c,i)=>`<span class="word-tile" style="--i:${i}">${c}</span>`).join('');
  return head('10 · VERTICAL','Perfil. <em>Identidad académica.</em>','Carné de estudiante y credenciales en el tablero.')+
- `<div class="grid-2"><section class="card"><div class="eyebrow">CARNÉ ACADÉMICO</div><h2>${escapeHtml(u.full_name)}</h2>
- <div class="stair-grid" aria-hidden="true">${'CRUZA'.split('').map(c=>`<span>${c}</span>`).join('')}</div>
- <div class="item"><strong>Usuario</strong><span>${escapeHtml(u.username)}</span></div><div class="item"><strong>Correo</strong><span>${escapeHtml(u.email)}</span></div>
- <div class="item"><strong>Rol</strong><span>Estudiante</span></div></section>
- <section class="card"><h2>Acceso <em>personal.</em></h2><p>El estudiante puede consultar sus datos y solicitar restablecimiento de contraseña.</p>
+ `<div class="stats">${stat('PROMEDIO ACUMULADO',number(s?.papa),'Calificación ponderada histórica','purple')}
+ ${stat('SEMESTRE ACTUAL',escapeHtml(s?.period_label||'2026-2'),'Período académico vigente','lime')}
+ ${stat('CRÉDITOS APROBADOS',s?.credits_approved||0,'Total créditos del plan','peach')}</div>
+ <div class="grid-2"><section class="card canvas-grid"><div class="eyebrow">CARNÉ ACADÉMICO / CASILLAS</div><h2>${escapeHtml(u.full_name)}</h2>
+ <div class="word-tiles" style="margin:14px 0" aria-hidden="true">${nameTiles}</div>
+ <div class="list"><div class="item"><div><div class="mon muted">01 · USUARIO</div><strong>${escapeHtml(u.username)}</strong></div><span class="pill">Activo</span></div>
+ <div class="item"><div><div class="mon muted">02 · CORREO INSTITUCIONAL</div><strong>${escapeHtml(u.email)}</strong></div></div>
+ <div class="item"><div><div class="mon muted">03 · SEMESTRE Y PERÍODO</div><strong>${escapeHtml(s?.period_label||'2026-2')}</strong></div><span class="pill lime">Vigente</span></div>
+ <div class="item"><div><div class="mon muted">04 · PROMEDIO PONDERADO</div><strong style="font-size:1.3rem;color:var(--ok)">${number(s?.papa)}</strong></div><span class="grade-val">${number(s?.papa)}</span></div>
+ <div class="item"><div><div class="mon muted">05 · ROL DEL SISTEMA</div><strong>Estudiante UTS</strong></div></div></div></section>
+ <section class="card"><h2>Acceso <em>personal.</em></h2><p class="muted">El estudiante puede consultar sus credenciales institucionales y solicitar restablecimiento de contraseña ante administración.</p>
+ <div class="crossword-calc" style="margin-top:16px"><div class="eyebrow" style="margin-bottom:8px">FIRMA EN CRUCIGRAMA</div>
+ <div class="stair-grid" aria-hidden="true">${'CRUZA'.split('').map(c=>`<span>${c}</span>`).join('')}</div></div>
  </section></div>`;
 }
 function teacherNotes(){const gs=state.data.groups;const choice=state.teacherGroup||gs[0]?.id;
@@ -562,6 +581,8 @@ document.addEventListener('click',async e=>{
  if(action==='confirm-enroll')return modalConfirm('Confirmar matrícula: los grupos elegidos se guardarán y el horario vigente será actualizado. ¿Continuar?',()=>changeServer('/student/enroll/confirm','POST'));
  if(action==='calendar-day'){state.calendarDate=b.dataset.day;render();return}
  if(action==='demo-month'){state.calendarDate='2026-11-11';render();return}
+ if(action==='cal-prev-month'){const parts=(state.calendarDate||'2026-11-11').split('-').map(Number);const d=new Date(parts[0],parts[1]-2,1);state.calendarDate=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`;render();return}
+ if(action==='cal-next-month'){const parts=(state.calendarDate||'2026-11-11').split('-').map(Number);const d=new Date(parts[0],parts[1],1);state.calendarDate=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`;render();return}
  if(action==='activity-toggle')return changeServer(`/student/activities/${b.dataset.activityId}`,'PUT',{completed:b.dataset.done==='true'},'Estado de entrega actualizado.');
  if(action==='agenda-new')return modalAgenda();
  if(action==='agenda-preset')return modalAgenda(null,{title:'Recordatorio del día',due_date:b.dataset.day});
@@ -634,7 +655,7 @@ document.addEventListener('input',e=>{
    if(c){
     const c1=c.summary.cuts[1]?.complete?c.summary.cuts[1].grade:4.0;
     const c2=c.summary.cuts[2]?.complete?c.summary.cuts[2].grade:4.0;
-    const sim=(c1*0.3)+(c2*0.3)+(val*0.4);
+    const sim=(c1*0.33)+(c2*0.33)+(val*0.34);
     const resEl=document.getElementById('simulate-result');if(resEl)resEl.textContent=number(sim);
     const targetEl=document.getElementById('sim-target-val');if(targetEl)targetEl.textContent=number(val);
    }
