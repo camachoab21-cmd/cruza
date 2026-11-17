@@ -11,4 +11,4 @@ def test_pagina_inicio_y_recursos():
         assert "/static/app.js" in pagina.text
         assert "/static/app.css" in pagina.text
         assert cliente.get("/static/app.js").status_code == 200
-        assert cliente.get("/static/app.css").status_code == 200
+        assert cliente.get("/static/app.css").status_code == 200\n    assert cliente.get("/favicon.ico").status_code == 200\n    assert cliente.get("/static/favicon.svg").status_code == 200
