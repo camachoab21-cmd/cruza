@@ -7,7 +7,7 @@ const state={user:null,csrf:null,data:null,page:'tablero',busy:false,loginShow:f
   ambientTool:'brush',ambientEnabled:true,loginUser:'',loginPass:''};
 const roleMenu={student:[['tablero','Mi tablero'],['pensum','Pensum'],['inscripcion','Inscripción'],
  ['horario','Horario'],['calendario','Calendario'],['agenda','Mi agenda'],['notas','Notas'],
- ['historial','Historial'],['perfil','Perfil']],
+ ['asistencia','Asistencia'],['historial','Historial'],['perfil','Perfil']],
  teacher:[['notas','Notas'],['asistencia','Asistencia']],
  admin:[['estudiantes','Estudiantes'],['recuperacion','Recuperación'],['catalogo','Catálogo'],['auditoria','Auditoría']]};
 const roleNames={student:'Estudiante',teacher:'Docente',admin:'Administrador'};
@@ -15,8 +15,10 @@ const shortDay=['Lun','Mar','Mie','Jue','Vie','Sab'];
 const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const number=v=>v===null||v===undefined?'—':Number(v).toFixed(2).replace('.',',');
 const notify=(message,kind='info')=>{
+  const region=document.getElementById('toast-region');if(!region)return;
+  region.replaceChildren(); // Avoid stacking notices over academic data on small screens.
   const el=document.createElement('div');el.className='toast';el.textContent=message;
-  document.getElementById('toast-region').append(el);setTimeout(()=>el.remove(),4600);
+  region.append(el);setTimeout(()=>{if(el.isConnected)el.remove();},3000);
 };
 async function api(path,method='GET',body=null){
  const options={method,credentials:'same-origin',headers:{}};
@@ -60,7 +62,7 @@ function authField(id,title,autocomplete,placeholder,type){
  </div></div>`;
 }
 function particles(){return `<div class="auth-stars" aria-hidden="true">${Array.from({length:14},(_,i)=>`<i style="--i:${i};--x:${(i*29+11)%100}%;--y:${(i*17+7)%94}%"></i>`).join('')}</div>`}
-function renderLogin(){state.page='login';document.body.classList.remove('sidebar-open');
+function renderLogin(){state.page='login';document.body.classList.remove('sidebar-open');document.getElementById('toast-region')?.replaceChildren();
  root.innerHTML=`<div class="auth-scene">${particles()}<div class="auth-star"></div>
  <section class="auth-art canvas-grid">${brand()}<div class="auth-copy"><div class="eyebrow">PROYECTO ACADÉMICO · UTS</div><h1>CRUZA<span style="color:var(--lime)">.</span></h1>
  <p>Cada materia, una palabra. Cada semestre, una nueva conexión.</p>
@@ -74,25 +76,26 @@ function renderLogin(){state.page='login';document.body.classList.remove('sideba
  }
  document.getElementById('login-form').addEventListener('submit',loginSubmit);
 }
-function tileRefresh(id){const input=document.getElementById(id),tileRoot=document.querySelector(`[data-tiles="${id}"]`);
- if(!input||!tileRoot)return;const text=input.value;
- const isFocused=document.activeElement===input;const caret=input.selectionStart??text.length;
- const isPass=id==='auth-pass'&&input.type==='password';
- const totalTiles=text.length===0?1:text.length+(text.length<25?1:0);
+function tileRefresh(id){
+ const input=document.getElementById(id),tileRoot=document.querySelector(`[data-tiles="${id}"]`);
+ if(!input||!tileRoot)return;
+ const text=input.value,limit=14,overflow=text.length>=limit;
+ const start=overflow?text.length-(limit-1):0;
+ const count=overflow?limit:Math.max(7,Math.min(limit,text.length+1));
+ const focused=document.activeElement===input,caret=input.selectionStart??text.length;
+ const secret=id==='auth-pass'&&input.type==='password';
  let html='';
- for(let i=0;i<totalTiles;i++){
-  const num=i+1;
-  if(i<text.length){
-   const ch=isPass?'●':text[i].toUpperCase();
-   const focused=isFocused&&(caret===i||(i===text.length-1&&caret>=text.length));
-   html+=`<span class="auth-tile filled ${focused?'focused':''}" style="--i:${Math.min(i,8)}"><span class="tile-num">${num}</span>${escapeHtml(ch)}</span>`;
-  }else{
-   const focused=isFocused&&caret>=text.length;
-   html+=`<span class="auth-tile is-empty ${focused?'focused':''}" style="--i:${Math.min(i,8)}"><span class="tile-num">${num}</span></span>`;
-  }
+ for(let i=0;i<count;i++){
+  const ellipsis=overflow&&i===0;
+  const index=overflow?start+i-1:i;
+  const filled=ellipsis||index<text.length;
+  const value=ellipsis?'…':filled?(secret?'●':text[index].toUpperCase()):'';
+  const active=focused&&(ellipsis?caret<=start:caret===index||(index===text.length-1&&caret>=text.length));
+  html+=`<span class="auth-tile ${filled?'filled':'is-empty'} ${active?'focused':''}" style="--i:${Math.min(i,8)}"><span class="tile-num">${ellipsis?'…':index+1}</span>${escapeHtml(value)}</span>`;
  }
  tileRoot.innerHTML=html;
 }
+
 async function loginSubmit(e){e.preventDefault();if(state.busy)return;
  const username=document.getElementById('auth-user').value,password=document.getElementById('auth-pass').value;
  if(!username||!password)return;
@@ -126,7 +129,8 @@ function shell(){const title=roleMenu[state.user.role].find(([id])=>id===state.p
  <strong class="name">${escapeHtml(title)}</strong><span class="pill">PERÍODO 2026-2</span></div>
  <div class="controls">${btn('☀ / ☾','theme','btn-mini','aria-label="Alternar modo día y noche"')}
  ${btn('✎ / 🖌','tool','btn-mini','title="Alternar lápiz y pincel"')}
- </div></header><div id="content" class="page">${pageContent()}</div>
+ ${btn('Pistas','toggle-hints','btn-mini','aria-pressed="true" aria-label="Mostrar u ocultar pistas contextuales"')}
+ </div></header><aside id="hint" class="hint-bar" role="status" aria-live="polite">${escapeHtml(hintFor(state.page))}</aside><div id="content" class="page">${pageContent()}</div>
  <footer class="small muted" style="margin-top:42px;border-top:1px solid var(--line);padding-top:18px">CRUZA · Campus Académico · ${escapeHtml(roleNames[state.user.role])}</footer>
  </main></div>`}
 function pageContent(){switch(state.user.role){
@@ -138,6 +142,10 @@ function pageContent(){switch(state.user.role){
 function render(){if(!state.user){renderLogin();return;}
  if(!roleMenu[state.user.role].some(([r])=>r===state.page))state.page=roleMenu[state.user.role][0][0];
  root.innerHTML=shell();
+ document.getElementById('toast-region')?.replaceChildren();
+ const hintsDisabled=localStorage.getItem('cruza-hints')==='0';
+ const ribbon=document.getElementById('hint');if(ribbon)ribbon.hidden=hintsDisabled;
+ document.querySelector('[data-action="toggle-hints"]')?.setAttribute('aria-pressed',String(!hintsDisabled));
  if(state.page==='tablero')requestAnimationFrame(mountPowder);
  if(state.page==='inscripcion')requestAnimationFrame(mountPowder);
 }
@@ -260,7 +268,7 @@ function calendar(){const acts=state.data.activities;const today=state.calendarD
  }
  const list=acts.filter(a=>a.due_date===today);
  return head('06 · VERTICAL','Calendario. <em>Casillas del mes.</em>','Diagonal roja: atrasada; naranja: pendiente; verde: entregada.',linkRoute('Abrir Mi agenda →','agenda'))+
- `<div class="grid-2"><section class="card canvas-grid"><div class="between"><div class="cal-nav"><button type="button" class="btn-mini" data-action="cal-prev-month" aria-label="Mes anterior">←</button><h2 style="margin:0;font-size:1.3rem;text-transform:capitalize">${first.toLocaleDateString('es-CO',{month:'long',year:'numeric'})}</h2><button type="button" class="btn-mini" data-action="cal-next-month" aria-label="Mes siguiente">→</button></div><div class="row-left">${btn('Nov 2026','demo-month','btn-mini')}</div></div>
+ `<div class="grid-2"><section class="card canvas-grid"><div class="between"><div class="cal-nav"><button type="button" class="btn-mini" data-action="cal-prev-month" aria-label="Mes anterior">←</button><h2 style="margin:0;font-size:1.3rem">${first.toLocaleDateString('es-CO',{month:'long',year:'numeric'}).replace(/^./,ch=>ch.toUpperCase())}</h2><button type="button" class="btn-mini" data-action="cal-next-month" aria-label="Mes siguiente">→</button></div><div class="row-left">${btn('Nov 2026','demo-month','btn-mini')}</div></div>
  <div class="calendar">${cells}</div></section>
  <section class="card"><div class="eyebrow">ACTIVIDADES DEL DÍA</div><h2>${escapeHtml(today)}</h2>
  ${list.length?list.map(a=>`<div class="item"><div><strong>${escapeHtml(a.title)}</strong><div class="small muted">${escapeHtml(a.course)} · ${escapeHtml(a.state)}</div></div>
@@ -279,41 +287,58 @@ function agendaPage(){const all=state.data.agenda;const list=all.filter(x=>state
  ${btn('Eliminar','agenda-delete','btn-mini btn-danger',`data-agenda-id="${x.id}"`)}</div></div>`).join(''):
  '<div class="notice">Aquí todavía no hay recordatorios. Crea uno desde el botón superior.</div>'}</div>`;
 }
+function simCut(course,term){
+ const prop=term===1?'cut1':'cut2';
+ const manual=state.courseSim?.courseId===course.course_id?state.courseSim[prop]:undefined;
+ if(manual!==undefined)return manual;
+ const cut=course.summary?.cuts?.[term];
+ return cut?.grade??cut?.provisional??null;
+}
+function validHypothesis(value){
+ if(value===null||value===undefined||value==='')return null;
+ const n=Number(value);return Number.isFinite(n)&&n>=0&&n<=5?n:null;
+}
+function predictFinal(c1,c2,c3){
+ const grades=[c1,c2,c3].map(validHypothesis);
+ if(grades.some(x=>x===null))return null;
+ return Math.round((grades[0]*.30+grades[1]*.30+grades[2]*.40+Number.EPSILON)*100)/100;
+}
 function crosswordCalculator(all){
  if(!all||!all.length)return '';
  const selectedId=state.courseSim?.courseId||all[0].course_id;
  const c=all.find(x=>x.course_id===selectedId)||all[0];
- const targetScore=state.courseSim?.grade??4.5;
- const c1=c.summary.cuts[1]?.complete?c.summary.cuts[1].grade:4.0;
- const c2=c.summary.cuts[2]?.complete?c.summary.cuts[2].grade:4.0;
- const c3=targetScore;
- const simulated=(c1*0.33)+(c2*0.33)+(c3*0.34);
+ const c1=simCut(c,1),c2=simCut(c,2);
+ const c3=state.courseSim?.grade??4.5;
+ const simulated=predictFinal(c1,c2,c3);
  const codeTiles=(c.code||'WEB').toUpperCase().replace(/[^A-Z0-9]/g,'').split('').map(l=>`<span class="word-tile">${l}</span>`).join('');
- return `<section class="crossword-calc"><div class="between" style="align-items:flex-start">
- <div><div class="eyebrow">PISTA ESPECIAL · CÁLCULO DE CRUCIGRAMA</div>
+ return `<section class="crossword-calc" aria-label="Simulador de definitiva académica">
+ <div class="between" style="align-items:flex-start"><div><div class="eyebrow">PISTA ESPECIAL · CÁLCULO DE CRUCIGRAMA</div>
  <h2 style="margin:4px 0 8px">Calculadora <em>de Casillas.</em></h2>
  <div class="word-tiles" aria-hidden="true">${codeTiles}</div></div>
- <div class="field" style="margin:0;min-width:200px"><label for="simulate-course" class="small">Materia a calcular</label>
- <select id="simulate-course" data-action="sim-select-course">
- ${all.map(x=>`<option value="${x.course_id}" ${x.course_id===selectedId?'selected':''}>${escapeHtml(x.name)}</option>`).join('')}</select></div></div>
+ <div class="field" style="margin:0;min-width:min(200px,100%)"><label for="simulate-course" class="small">Materia a calcular</label>
+ <select id="simulate-course">${all.map(x=>`<option value="${x.course_id}" ${x.course_id===selectedId?'selected':''}>${escapeHtml(x.name)}</option>`).join('')}</select></div></div>
+ <p class="small muted">Simulación: puedes cambiar las tres notas hipotéticas. Los cortes pesan <strong>30 %, 30 % y 40 %</strong>. Nada de esto modifica las notas oficiales.</p>
  <div class="calc-equation">
-   <div class="calc-tile"><span class="calc-num">01</span><span class="calc-pct">CORTE 1 · 33%</span><span class="calc-val">${number(c1)}</span></div>
-   <span class="calc-operator">+</span>
-   <div class="calc-tile"><span class="calc-num">02</span><span class="calc-pct">CORTE 2 · 33%</span><span class="calc-val">${number(c2)}</span></div>
-   <span class="calc-operator">+</span>
-   <div class="calc-tile unknown"><span class="calc-num">03 ?</span><span class="calc-pct">CORTE 3 · 34%</span><span class="calc-val" id="sim-target-val">${number(c3)}</span></div>
-   <span class="calc-operator">=</span>
-   <div class="calc-tile result"><span class="calc-num">DEF</span><span class="calc-pct">DEFINITIVA RESUELTA</span><span class="calc-val" id="simulate-result">${number(simulated)}</span></div>
+ ${[1,2].map((term,i)=>`<label class="calc-tile"><span class="calc-num">0${term}</span><span class="calc-pct">CORTE ${term} · 30 %</span>
+ <input class="calc-grade-input" aria-label="Nota del corte ${term} para la simulación" id="simulate-cut-${term}" type="number" min="0" max="5" step="0.1" inputmode="decimal" value="${[c1,c2][i]??''}" placeholder="—"></label><span class="calc-operator" aria-hidden="true">+</span>`).join('')}
+ <label class="calc-tile unknown"><span class="calc-num">03 ?</span><span class="calc-pct">CORTE 3 · 40 %</span>
+ <input class="calc-grade-input" aria-label="Nota del corte 3 para la simulación" type="number" min="0" max="5" step="0.1" inputmode="decimal" id="simulate-grade" value="${c3}"></label>
+ <span class="calc-operator" aria-hidden="true">=</span>
+ <div class="calc-tile result" aria-live="polite"><span class="calc-num">DEF</span><span class="calc-pct">DEFINITIVA ESTIMADA</span><span class="calc-val" id="simulate-result">${number(simulated)}</span></div>
  </div>
- <div class="calc-dial">
-   <span class="eyebrow">CASILLA INCÓGNITA:</span>
-   <div class="calc-quick-tiles">
-     ${[3.0,3.5,4.0,4.5,5.0].map(v=>`<button type="button" class="calc-quick-tile ${Math.abs(targetScore-v)<0.05?'active':''}" data-action="sim-quick" data-grade="${v}">${v.toFixed(1).replace('.',',')}</button>`).join('')}
-   </div>
-   <input type="number" min="0" max="5" step=".1" id="simulate-grade" value="${targetScore}" style="width:70px;padding:8px;font:700 1.1rem Consolas,monospace;border:2px solid #8ea775;border-radius:6px;background:var(--paper2);text-align:center">
-   ${btn('Calcular estimación','simulate','btn-lime btn-mini','style="display:none"')}
- </div></section>`;
+ <div class="calc-dial"><span class="eyebrow">PRUEBA EL CORTE 3:</span>
+ <div class="calc-quick-tiles">${[3,3.5,4,4.5,5].map(v=>`<button type="button" class="calc-quick-tile ${Math.abs(c3-v)<0.05?'active':''}" data-action="sim-quick" data-grade="${v}" aria-label="Simular nota ${v.toFixed(1)} para el corte 3">${v.toFixed(1).replace('.',',')}</button>`).join('')}</div></div>
+ <p class="small muted" style="margin:12px 0 0">Si algún corte está pendiente, escribe una nota hipotética para calcular. Resultado orientativo para la demostración.</p>
+ </section>`;
 }
+function updateSimulationFromInputs(){
+ const cid=Number(document.getElementById('simulate-course')?.value);
+ const cut1=document.getElementById('simulate-cut-1')?.value??'',cut2=document.getElementById('simulate-cut-2')?.value??'',cut3=document.getElementById('simulate-grade')?.value??'';
+ state.courseSim={courseId:cid,cut1,cut2,grade:cut3};
+ const output=document.getElementById('simulate-result');if(output)output.textContent=number(predictFinal(cut1,cut2,cut3));
+ document.querySelectorAll('.calc-quick-tile').forEach(button=>button.classList.toggle('active',Number(button.dataset.grade)===Number(cut3)));
+}
+
 function gradesPage(){const d=state.data;const all=d.grades;const att=d.attendance||[];const absences=att.filter(x=>!x.present);
  const attByCourse=att.reduce((acc,cur)=>{(acc[cur.course]=acc[cur.course]||[]).push(cur);return acc},{});
  return head('05 · HORIZONTAL','Notas y Calificaciones. <em>Cada avance cuenta.</em>','Cada casilla resuelta completa tu mapa académico del período.')+
@@ -323,10 +348,10 @@ function gradesPage(){const d=state.data;const all=d.grades;const att=d.attendan
  <div class="courses">${all.map(c=>`<article class="course-grades-card"><div class="course-grades-head">
  <div><div class="eyebrow">${escapeHtml(c.code)} · ${c.credits} CRÉDITOS</div><h2 style="margin:5px 0 0">${escapeHtml(c.name)}</h2></div>
  <div class="def-tile" title="Nota definitiva"><span class="def-label">DEFINITIVA</span><span class="def-val">${number(c.summary.final)}</span></div></div>
- <div class="corte-tiles">${[1,2,3].map(t=>{const cut=c.summary.cuts[t],isComplete=cut.complete,pct=t===3?'34%':'33%';
+ <div class="corte-tiles">${[1,2,3].map(t=>{const cut=c.summary.cuts[t],isComplete=cut.complete,pct=t===3?'40%':'30%';
  return `<div class="corte-cell ${isComplete?'complete':'pending'}"><div class="corte-header"><span class="corte-tag">Corte ${t}</span>
  <span class="corte-pct">${pct}</span></div><div class="corte-val">${isComplete?number(cut.grade):'—'}</div></div>`;}).join('')}</div>
- <div class="tiny muted" style="font-family:Consolas,monospace;background:var(--wash);padding:4px 8px;border-radius:5px">Ponderación del corte: 30% Trabajos independientes · 60% Parcial · 10% Autoevaluación</div>
+ <div class="tiny muted" style="font-family:Consolas,monospace;background:var(--wash);padding:4px 8px;border-radius:5px">Cada corte combina las evaluaciones y porcentajes configurados para la asignatura; una nota pendiente no equivale a cero.</div>
  <div class="corte-evals">${c.evaluations.map(e=>`${escapeHtml(e.name)}: <strong>${e.grade===null?'Pendiente':number(e.grade)}</strong>`).join(' &nbsp;·&nbsp; ')}</div>
  </article>`).join('')}</div>
  ${crosswordCalculator(all)}
@@ -367,8 +392,8 @@ function profilePage(){const u=state.data.profile;const s=state.data.summary;
  <div class="item"><div><div class="mon muted">02 · CORREO INSTITUCIONAL</div><strong>${escapeHtml(u.email)}</strong></div></div>
  <div class="item"><div><div class="mon muted">03 · SEMESTRE Y PERÍODO</div><strong>${escapeHtml(s?.period_label||'2026-2')}</strong></div><span class="pill lime">Vigente</span></div>
  <div class="item"><div><div class="mon muted">04 · PROMEDIO PONDERADO</div><strong style="font-size:1.3rem;color:var(--ok)">${number(s?.papa)}</strong></div><span class="grade-val">${number(s?.papa)}</span></div>
- <div class="item"><div><div class="mon muted">05 · ROL DEL SISTEMA</div><strong>Estudiante UTS</strong></div></div></div></section>
- <section class="card"><h2>Acceso <em>personal.</em></h2><p class="muted">El estudiante puede consultar sus credenciales institucionales y solicitar restablecimiento de contraseña ante administración.</p>
+ <div class="item"><div><div class="mon muted">05 · ROL DEL SISTEMA</div><strong>Estudiante (demostración)</strong></div></div></div></section>
+ <section class="card"><h2>Acceso <em>personal.</em></h2><p class="muted">El estudiante puede consultar sus datos académicos y solicitar restablecimiento de contraseña ante administración.</p>
  <div class="crossword-calc" style="margin-top:16px"><div class="eyebrow" style="margin-bottom:8px">FIRMA EN CRUCIGRAMA</div>
  <div class="stair-grid" aria-hidden="true">${'CRUZA'.split('').map(c=>`<span>${c}</span>`).join('')}</div></div>
  </section></div>`;
@@ -407,11 +432,11 @@ function adminUsers(){const d=state.data;
  `<div class="stats">${stat('ESTUDIANTES ACTIVOS',d.users.filter(u=>u.role==='student'&&u.status==='active').length,'Cuentas habilitadas','lime')}
  ${stat('PENDIENTES',d.users.filter(u=>u.role==='student'&&u.status==='pending').length,'Por aprobar','purple')}
  ${stat('BLOQUEADOS',d.users.filter(u=>u.status==='locked').length,'Requieren recuperación','peach')}</div>
- <section class="card"><h2>Directorio <em>de acceso.</em></h2><div class="table-scroll"><table class="table"><thead>
+ <section class="card"><h2>Directorio <em>de acceso.</em></h2><div class="table-scroll admin-users-table"><table class="table"><thead>
  <tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Intentos</th><th>Acciones</th></tr></thead><tbody>
- ${d.users.map(u=>`<tr><td><strong>${escapeHtml(u.full_name)}</strong><div class="mon muted">${escapeHtml(u.username)}</div></td>
- <td>${escapeHtml(roleNames[u.role])}</td><td>${labelTag(u.status,u.status==='active'?'ok':u.status==='locked'?'danger':'pill-muted')}</td>
- <td>${u.failed}</td><td><div class="row-left">
+ ${d.users.map(u=>`<tr><td data-label="Usuario"><strong>${escapeHtml(u.full_name)}</strong><div class="mon muted">${escapeHtml(u.username)}</div></td>
+ <td data-label="Rol">${escapeHtml(roleNames[u.role])}</td><td data-label="Estado">${labelTag(u.status,u.status==='active'?'ok':u.status==='locked'?'danger':'pill-muted')}</td>
+ <td data-label="Intentos">${u.failed}</td><td data-label="Acciones"><div class="row-left">
  ${u.status==='pending'?btn('Aprobar','user-status','btn-mini btn-lime',`data-id="${u.id}" data-status="active"`):''}
  ${u.status==='reset_pending'?btn('Habilitar','user-status','btn-mini btn-lime',`data-id="${u.id}" data-status="active"`):''}
  ${u.status==='active'&&u.role!=='admin'?btn('Desactivar','user-status','btn-mini btn-danger',`data-id="${u.id}" data-status="disabled"`):''}
@@ -451,7 +476,16 @@ function modal(title,html){lastFocus=document.activeElement;
  const overlay=document.createElement('div');overlay.className='overlay';
  overlay.innerHTML=`<section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
  <div class="between"><h2 id="dialog-title">${escapeHtml(title)}</h2>${btn('✕','modal-close','btn-mini','aria-label="Cerrar ventana"')}</div>${html}</section>`;
- document.body.append(overlay);overlay.querySelector('input,button,select,textarea')?.focus();
+ document.body.append(overlay);
+ // Connect labels and controls in dynamically opened forms (mouse, touch and screen readers).
+ overlay.querySelectorAll('.field').forEach((field,i)=>{
+  const label=field.querySelector('label'),control=field.querySelector('input,select,textarea');
+  if(label&&control&&!control.getAttribute('aria-label')){
+   if(!control.id)control.id=`modal-field-${i}`;
+   if(!label.htmlFor)label.htmlFor=control.id;
+  }
+ });
+ overlay.querySelector('input,button,select,textarea')?.focus();
 }
 function modalClose(){document.querySelector('.overlay')?.remove();if(lastFocus?.isConnected)lastFocus.focus();}
 function modalConfirm(text,onConfirm){modal('Confirmar la acción',`<p>${escapeHtml(text)}</p>
@@ -509,7 +543,7 @@ function modalGroup(){const d=state.data,teachers=d.users.filter(x=>x.role==='te
  <div class="field"><label>Fin</label><input name="end" type="time" value="10:00"></div></div>
  <div class="actions"><button class="btn-primary" type="submit">Crear grupo</button></div></form>`)}
 async function changeServer(path,method,body=null,message='Cambios guardados.'){
- try{const res=await api(path,method,body);if(res.message)notify(res.message);else notify(message);modalClose();await reloadData();return res}
+ try{const res=await api(path,method,body);modalClose();await reloadData();notify(res.message||message);return res}
  catch(e){notify(e.message,'error');return null}
 }
 const formData=f=>Object.fromEntries(new FormData(f).entries());
@@ -558,7 +592,7 @@ document.addEventListener('click',async e=>{
  if(action==='theme')return toggleTheme();
  if(action==='tool')return toggleTool();
  if(action==='toggle-hints'){
-   const el=document.getElementById('hint');el.hidden=!el.hidden;localStorage.setItem('cruza-hints',el.hidden?'0':'1');return;
+   const el=document.getElementById('hint');if(!el)return;el.hidden=!el.hidden;localStorage.setItem('cruza-hints',el.hidden?'0':'1');b.setAttribute('aria-pressed',String(!el.hidden));return;
  }
  if(action==='logout'){
    try{await api('/logout','POST');state.user=null;state.csrf=null;state.data=null;renderLogin();notify('Sesión cerrada.')}catch(err){notify(err.message)}return;
@@ -593,12 +627,12 @@ document.addEventListener('click',async e=>{
  if(action==='agenda-delete')return modalConfirm('¿Eliminar definitivamente este recordatorio personal?',()=>changeServer(`/student/agenda/${b.dataset.agendaId}`,'DELETE'));
  if(action==='sim-quick'){
   const grade=Number(b.dataset.grade);const cid=Number(document.getElementById('simulate-course')?.value);
-  state.courseSim={courseId:cid,grade};render();return;
+  updateSimulationFromInputs();state.courseSim.grade=grade;render();return;
  }
  if(action==='simulate'){
   const id=Number(document.getElementById('simulate-course')?.value),score=Number(document.getElementById('simulate-grade')?.value);
   if(!Number.isFinite(score)||score<0||score>5)return notify('La nota hipotética debe estar entre 0 y 5.');
-  state.courseSim={courseId:id,grade:score};render();return;
+  updateSimulationFromInputs();state.courseSim.grade=score;render();return;
  }
  if(action==='save-grade'){
   const sid=Number(b.dataset.studentId),eid=Number(b.dataset.evalId);const val=document.getElementById(`grade-${sid}-${eid}`).value;
@@ -634,7 +668,7 @@ document.addEventListener('click',async e=>{
 });
 document.addEventListener('change',async e=>{
  const el=e.target;
- if(el.id==='simulate-course'){state.courseSim={courseId:Number(el.value),grade:state.courseSim?.grade??4.5};render();return}
+ if(el.id==='simulate-course'){state.courseSim={courseId:Number(el.value),grade:4.5};render();return}
  if(el.id==='teacher-group'||el.id==='attendance-group'){state.teacherGroup=Number(el.value);render();return}
  if(el.id==='course-filter'){state.filterType=el.value;render();return}
  if(el.id==='semester-filter'){state.filterSemester=el.value;render();return}
@@ -646,22 +680,7 @@ document.addEventListener('change',async e=>{
  }
 });
 document.addEventListener('input',e=>{
- if(e.target.id==='simulate-grade'){
-  const val=Number(e.target.value);
-  if(Number.isFinite(val)&&val>=0&&val<=5){
-   const cid=Number(document.getElementById('simulate-course')?.value);
-   state.courseSim={courseId:cid,grade:val};
-   const c=state.data?.grades?.find(x=>x.course_id===cid);
-   if(c){
-    const c1=c.summary.cuts[1]?.complete?c.summary.cuts[1].grade:4.0;
-    const c2=c.summary.cuts[2]?.complete?c.summary.cuts[2].grade:4.0;
-    const sim=(c1*0.33)+(c2*0.33)+(val*0.34);
-    const resEl=document.getElementById('simulate-result');if(resEl)resEl.textContent=number(sim);
-    const targetEl=document.getElementById('sim-target-val');if(targetEl)targetEl.textContent=number(val);
-   }
-  }
-  return;
- }
+ if(['simulate-grade','simulate-cut-1','simulate-cut-2'].includes(e.target.id)){updateSimulationFromInputs();return;}
  if(e.target.id==='course-search'){state.filterText=e.target.value;
   // Keep focus and caret by replacing only cards (avoid rerendering the whole form).
   const list=document.querySelector('.courses');if(list){
@@ -709,6 +728,18 @@ function isFree(target){if(!target||target.closest('button,input,textarea,select
 let drawing=false;document.addEventListener('pointerdown',e=>{
  if(e.pointerType!=='mouse'||prefersReduced()||!isFree(e.target))return;drawing=true;gesture=[[e.clientX,e.clientY]];lastPointer=[e.clientX,e.clientY];
 },{passive:true});
+document.addEventListener('pointerover',e=>{
+ const el=document.getElementById('hint');if(!el||el.hidden)return;
+ const target=e.target.closest('[data-hint],button,label,input,select,a');
+ const hint=target?.dataset?.hint||target?.getAttribute('aria-label')||target?.textContent?.trim().slice(0,86);
+ if(hint)el.textContent=`Pista: ${hint}`;
+});
+document.addEventListener('focusin',e=>{
+ const el=document.getElementById('hint');if(!el||el.hidden)return;
+ const target=e.target.closest('[data-hint],button,input,select,a');
+ const hint=target?.dataset?.hint||target?.getAttribute('aria-label')||target?.textContent?.trim().slice(0,86);
+ if(hint)el.textContent=`Pista: ${hint}`;
+});
 document.addEventListener('pointermove',e=>{
  if(e.pointerType!=='mouse'||prefersReduced()||!isFree(e.target)){lastPointer=null;return;}
  const p=[e.clientX,e.clientY];if(drawing)gesture.push(p);
