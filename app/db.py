@@ -23,9 +23,14 @@ def verify_pwd(pw,stored):
     except Exception: return False
 DUMMY_HASH=hash_pwd('no-such-user-at-cruza')
 
+class ClosingConnection(sqlite3.Connection):
+    def __exit__(self,*args):
+        try:return super().__exit__(*args)
+        finally:self.close()
+
 def connect():
     DB_PATH.parent.mkdir(parents=True,exist_ok=True)
-    c=sqlite3.connect(DB_PATH,timeout=10,isolation_level=None)
+    c=sqlite3.connect(DB_PATH,timeout=10,isolation_level=None,factory=ClosingConnection)
     c.row_factory=sqlite3.Row
     c.execute('PRAGMA foreign_keys=ON');c.execute('PRAGMA busy_timeout=10000');c.execute('PRAGMA journal_mode=WAL')
     return c
@@ -91,6 +96,7 @@ def init_db(seed=False):
             status TEXT NOT NULL CHECK(status IN ('requested','issued','used','expired')),
             token_hash TEXT,expires_at TEXT,created_at TEXT NOT NULL,issued_by INTEGER REFERENCES users(id),used_at TEXT);
         CREATE TABLE IF NOT EXISTS abuse(key TEXT PRIMARY KEY, count INTEGER NOT NULL,window_at TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY,when_at TEXT NOT NULL,actor_id INTEGER,
             event TEXT NOT NULL,target TEXT NOT NULL,details TEXT NOT NULL);
         ''')

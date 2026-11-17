@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from .db import ROOT,connect,tx,one,allrows,utc,expire,audit,hash_pwd,verify_pwd,DUMMY_HASH,init_db
 from .logic import PERIOD,MAX_CREDITS,time_conflicts,grade_summary,period_average,cumulative_average,weighted,CUT_WEIGHTS
+from .services import settings,validate_sessions
 
 COOKIE='cruza_session';SESSION_HOURS=12;DEMO=os.environ.get('CRUZA_DEMO_MODE','0')=='1'
 @asynccontextmanager
@@ -56,6 +57,8 @@ def require(request:Request,roles=None,mutate=False):
 
 @app.middleware('http')
 async def origin_guard(req,call_next):
+    if req.headers.get('content-length','').isdigit() and int(req.headers['content-length'])>32768:
+        return JSONResponse({'error':'El formulario supera el tamaño permitido.'},status_code=413)
     if req.method not in ('GET','HEAD','OPTIONS'):
         origin=req.headers.get('origin')
         if origin:
@@ -69,6 +72,8 @@ async def origin_guard(req,call_next):
     res.headers['Referrer-Policy']='same-origin'
     res.headers['X-Frame-Options']='DENY'
     res.headers['Permissions-Policy']='camera=(), microphone=(), geolocation=()'
+    if req.url.path.startswith('/api/'):
+        res.headers['Cache-Control']='no-store'
     res.headers['Content-Security-Policy']="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'"
     return res
 
@@ -87,7 +92,11 @@ def session_info(request:Request):
 
 async def getjson(request):
     try:
-        val=await request.json()
+        raw=bytearray()
+        async for chunk in request.stream():
+            raw.extend(chunk)
+            if len(raw)>32768:fail('El formulario supera el tamaño permitido.',413)
+        val=json.loads(raw)
         if not isinstance(val,dict):fail('Se esperaba un objeto válido.')
         return val
     except HTTPException:raise
@@ -106,6 +115,7 @@ async def login(request:Request):
     username=str(v.get('username','')).strip().upper()[:60]
     password=str(v.get('password',''))
     if not username or not password:fail('Escribe usuario y contraseña.')
+    if len(password)>128:fail('La contraseña admite hasta 128 caracteres.')
     # never use asserted X-Forwarded-For: app expected behind trusted reverse proxy.
     addr=request.client.host if request.client else 'local'
     issued=None;user=None;problem=None
@@ -124,6 +134,7 @@ async def login(request:Request):
                 c.execute('UPDATE users SET failed=?,status=? WHERE id=?',
                          (failed,'locked' if failed>=4 else 'active',user['id']))
                 if failed>=4:
+                    c.execute('DELETE FROM sessions WHERE user_id=?',(user['id'],))
                     audit(c,user['id'],'CUENTA_BLOQUEADA',str(user['id']),'Cuarto intento fallido')
             problem=('Usuario o contraseña incorrectos.',401)
         elif user['status']!='active':
@@ -174,7 +185,9 @@ async def redeem(request:Request):
     if len(password)<10 or len(password)>128:fail('Utiliza una contraseña de 10 a 128 caracteres.')
     with tx() as c:
         rate_guard(c,'recovery-redeem:'+username,limit=12)
+    with tx() as c:
         u=one(c,'SELECT * FROM users WHERE username=?',(username,))
+        if u and u['status'] in ('disabled','pending'):fail('Código inválido o vencido. Solicita uno nuevo.')
         r=one(c,"SELECT * FROM recovery WHERE user_id=? AND status='issued' ORDER BY id DESC LIMIT 1",(u['id'],)) if u else None
         digest=hashlib.sha256(token.encode()).hexdigest()
         if not r or not r['token_hash'] or r['expires_at']<=utc() or not secrets.compare_digest(digest,r['token_hash']):
@@ -208,7 +221,7 @@ def grade_records(c,student_id):
         es=allrows(c,'''SELECT e.id,e.term,e.name,e.weight,g.grade FROM evaluations e
             LEFT JOIN grades g ON g.evaluation_id=e.id AND g.student_id=? WHERE e.group_id=?
             ORDER BY term,e.id''',(student_id,r['group_id']))
-        out.append({**r,'evaluations':es,'summary':grade_summary(es)})
+        out.append({**r,'evaluations':es,'summary':grade_summary(es,settings(c)['cut_weights'])})
     return out
 
 def build_summary(c,student_id,grades):
@@ -226,7 +239,10 @@ def build_summary(c,student_id,grades):
     approved=sum(v['credits'] for v in last if v['grade']>=3.0)
     return {'papi':papi,'papa':papa,'period_label':PERIOD,'history':hist,
         'credits_current':sum(x['credits'] for x in grades),
-        'credits_approved':approved,'credits_hist':sum(x['credits'] for x in hist),
+        'credits_approved':approved,'credits_hist':sum(x['credits'] for x in attempts if x.get('grade') is not None),
+        'weighted_credits':sum(x['credits'] for x in last),'credits_pending':sum(x['credits'] for x in grades if x['summary']['final'] is None),
+        'papi_provisional':len(finalized)!=len(grades),
+        'cut_averages':{t:weighted([(g['summary']['cuts'][t]['grade'],g['credits']) for g in grades]) for t in (1,2,3)},
         'weighted_points':sum(float(v['grade'])*v['credits'] for v in last)}
 
 def activity_list(c,student_id):
@@ -247,7 +263,8 @@ def draft_status(c,student_id,courses,groups):
     selected=[gmap[x] for x in ids if x in gmap]
     problems=time_conflicts(selected)
     credits=sum(x['credits'] for x in selected)
-    if credits>MAX_CREDITS:problems.append({'reason':f'El borrador tiene {credits} créditos; máximo {MAX_CREDITS}.'})
+    maximum=settings(c)['max_credits']
+    if credits>maximum:problems.append({'reason':f'El borrador tiene {credits} créditos; máximo {maximum}.'})
     if not selected:problems.append({'reason':'Selecciona al menos una materia.'})
     return {'group_ids':ids,'selected':selected,'credits':credits,'problems':problems,'confirmed':current,
       'updated_at':d['updated_at'] if d else None}
@@ -258,7 +275,7 @@ def student_data(request:Request):
     with connect() as c:
         courses,groups=groups_list(c)
         grades=grade_records(c,u['id'])
-        return {'courses':courses,'groups':groups,'draft':draft_status(c,u['id'],courses,groups),
+        return {'settings':settings(c),'courses':courses,'groups':groups,'draft':draft_status(c,u['id'],courses,groups),
           'grades':grades,'summary':build_summary(c,u['id'],grades),
           'activities':activity_list(c,u['id']),
           'agenda':allrows(c,'SELECT * FROM agenda WHERE student_id=? ORDER BY due_date,due_time',(u['id'],)),
@@ -387,10 +404,11 @@ def teacher_data(request:Request):
             for s in students:
                 s['evaluations']=allrows(c,'''SELECT e.id,e.name,e.term,e.weight,a.grade FROM evaluations e
                     LEFT JOIN grades a ON a.evaluation_id=e.id AND a.student_id=? WHERE e.group_id=? ORDER BY e.term,e.id''',(s['id'],g['id']))
-                s['summary']=grade_summary(s['evaluations'])
+                s['summary']=grade_summary(s['evaluations'],settings(c)['cut_weights'])
                 s['attendance']=allrows(c,'SELECT day,present FROM attendance WHERE student_id=? AND group_id=? ORDER BY day DESC LIMIT 20',(s['id'],g['id']))
             g['students']=students
-        return {'groups':groups}
+            g['evaluations']=allrows(c,'SELECT * FROM evaluations WHERE group_id=? ORDER BY term,id',(g['id'],))
+        return {'settings':settings(c),'groups':groups}
 
 @app.put('/api/teacher/grade')
 async def save_grade(request:Request):
@@ -440,7 +458,7 @@ def admin_data(request:Request):
             FROM recovery r JOIN users u ON u.id=r.user_id ORDER BY r.id DESC LIMIT 50''')
         auditrows=allrows(c,'''SELECT a.*,u.username actor FROM audit a LEFT JOIN users u ON u.id=a.actor_id ORDER BY a.id DESC LIMIT 60''')
         courses,groups=groups_list(c)
-    return {'users':students,'recovery':requests,'audit':auditrows,'courses':courses,'groups':groups}
+        return {'settings':settings(c),'users':students,'recovery':requests,'audit':auditrows,'courses':courses,'groups':groups}
 
 @app.post('/api/admin/students')
 async def create_student(request:Request):
@@ -449,7 +467,7 @@ async def create_student(request:Request):
     username=valid_str(v.get('username'),4,30).upper()
     if not re.fullmatch(r'[A-Z0-9._-]+',username):fail('Usuario: únicamente letras, números, punto, guion y guion bajo.')
     password=str(v.get('password',''))
-    if len(password)<10:fail('La contraseña temporal debe tener mínimo 10 caracteres.')
+    if not 10<=len(password)<=128:fail('La contraseña temporal debe tener entre 10 y 128 caracteres.')
     with tx() as c:
         if one(c,'SELECT id FROM users WHERE username=?',(username,)):fail('Este usuario ya existe.')
         cur=c.execute('INSERT INTO users(username,full_name,email,password_hash,role,status,created_at) VALUES(?,?,?,?,?,?,?)',
@@ -470,7 +488,9 @@ async def user_status(uid:int,request:Request):
         elif target['status']=='disabled' and nextstatus=='active':pass
         else:fail('Transición de estado no permitida. La cuenta bloqueada requiere restablecimiento previo.')
         c.execute('UPDATE users SET status=?,failed=0 WHERE id=?',(nextstatus,uid))
-        if nextstatus!='active':c.execute('DELETE FROM sessions WHERE user_id=?',(uid,))
+        if nextstatus!='active':
+            c.execute('DELETE FROM sessions WHERE user_id=?',(uid,))
+            c.execute("UPDATE recovery SET status='expired' WHERE user_id=? AND status IN ('requested','issued')",(uid,))
         audit(c,u['id'],'ESTADO_CUENTA_CAMBIADO',str(uid),target['status']+' → '+nextstatus)
     return {'ok':True}
 
@@ -481,6 +501,8 @@ def issue_recovery(rid:int,request:Request):
     with tx() as c:
         rec=one(c,"SELECT * FROM recovery WHERE id=? AND status='requested'",(rid,))
         if not rec:fail('Solicitud inexistente o ya procesada.',404)
+        target=one(c,'SELECT status FROM users WHERE id=?',(rec['user_id'],))
+        if not target or target['status'] in ('disabled','pending'):fail('La cuenta no admite recuperación en su estado actual.')
         c.execute("UPDATE recovery SET status='issued',token_hash=?,expires_at=?,issued_by=? WHERE id=?",
           (hashlib.sha256(token.encode()).hexdigest(),expire(.5),u['id'],rid))
         audit(c,u['id'],'RECOVERY_CODIGO_EMITIDO',str(rec['user_id']),'Verificación de identidad realizada fuera de la aplicación')
@@ -493,11 +515,7 @@ async def create_group(request:Request):
     course_id=intid(v.get('course_id'));code=valid_str(v.get('code'),1,5).upper()
     teacher_id=intid(v.get('teacher_id')) if v.get('teacher_id') else None
     capacity=intid(v.get('capacity',25));room=valid_str(v.get('room'),1,40)
-    sessions=v.get('sessions')
-    if not isinstance(sessions,list) or not sessions or len(sessions)>8:fail('Agrega entre 1 y 8 sesiones.')
-    for s in sessions:
-        if not isinstance(s,dict) or s.get('day') not in ('Lun','Mar','Mie','Jue','Vie','Sab'):fail('Día incorrecto.')
-        if not re.fullmatch(r'\d\d:\d\d',str(s.get('start',''))) or not re.fullmatch(r'\d\d:\d\d',str(s.get('end',''))) or s['end']<=s['start']:fail('Franja inválida.')
+    sessions=validate_sessions(v.get('sessions'))
     if not 1<=capacity<=250:fail('Cupos entre 1 y 250.')
     with tx() as c:
         if not one(c,'SELECT id FROM courses WHERE id=?',(course_id,)):fail('Materia inexistente.')
@@ -511,6 +529,9 @@ async def create_group(request:Request):
             for i in (1,2):c.execute('INSERT INTO evaluations(group_id,term,name,weight) VALUES(?,?,?,?)',(gid,term,f'Evaluación {i}',50))
         audit(c,u['id'],'GRUPO_CREADO',str(gid))
     return {'ok':True}
+
+from .extensions import router as completion_router
+app.include_router(completion_router)
 
 @app.post('/api/admin/courses')
 async def create_course(request:Request):

@@ -1,67 +1,49 @@
-# Continuidad — CRUZA 3
+# Continuidad CRUZA — 17 de noviembre de 2026
 
-## Objetivo
+## Estado real
+NO está lista para afirmar entrega completa. Usuario exige funcionamiento local, ahorro de créditos, nada de control de pantalla; usar Chromium headless para pruebas.
+Repositorio: https://github.com/camachoab21-cmd/cruza. Rama local: cruza-funcional.
+GitHub: cuenta camachoab21-cmd validada vía Git Credential Manager con admin/push. Invitación Isfrant #343048319 enviada con write el 11 de noviembre, aceptación no verificada.
 
-Proyecto universitario de crucigrama académico creativo, responsive y plenamente demostrable, con estudiante, docente y administrador, matrícula, horarios, notas y seguridad en servidor.
+## Avances preservados
+- d6d4cb1: respaldo íntegro CRUZA-FINAL publicado en origin/cruza-funcional.
+- 33ba2c6: aporte ZIP de Fidel importado localmente.
+- 26f6635: integración local con origin/main (10cf09a), preserva arreglos recientes de Fidel.
+- Adoptada su arquitectura Python/FastAPI/SQLite; no continuar el experimento Node (.local/experimento-node).
+- ZIP original intacto en Descargas; no importar .venv, .git ni data del ZIP.
+- Entorno .venv creado con Python 3.12 del runtime. Dependencias y Chromium instalados.
 
-## Estado actual
+## Pruebas comprobadas
+- Suite original: 19 aprobadas el 16 de noviembre (una advertencia de Starlette por httpx).
+- Nueve pruebas añadidas en tests/test_completion.py: fallaron antes de implementar (RED comprobado).
+- Cambios posteriores en app/db.py, logic.py, main.py, services.py y extensions.py compilan con py_compile.
+- La suite tras esos cambios NO se ejecutó: revisión automática de aprobación falló por límite de uso; indicaba reintentar desde el 17 de noviembre a las 04:00.
+- Ejecutar pruebas con permisos normales externos al entorno restringido mediante exec_command require_escalated: el modo restringido bloquea socketpair de asyncio en Windows y las pruebas quedan esperando. No corregir ese bloqueo cambiando el código del proyecto.
 
-- Carpeta `CRUZA-RELEASE-SEGURO`: código FastAPI/SQLite, cliente JS/CSS, versiones anteriores archivadas, pruebas y documentación.
-- HTML autónomo anterior en `/index.html` y `/respaldo/CRUZA-HTML-DEMO-2026.html`.
-- Instrucciones de ejecución `README.md`, instalación `INSTALAR.bat`, arranque `INICIAR-CRUZA.bat`.
-- Test API: 19 pruebas pasadas. Visual aislada: 4 combinaciones perfil/resolución pasadas. Grabación de la nueva interfaz: `docs/CRUZA3-RECORRIDO-VISUAL.mp4` (transporte simulado).
-- **Publicación a GitHub pendiente**: el conector de este chat no tenía permisos para escribir en `camachoab21-cmd/cruza`.
-- **Invitación de ISFRANT pendiente**: requiere propietario o administrador del repo.
-- Último commit remoto consultado antes de este trabajo: `ab240b92b49fd048e025af01c942859b28f2b202` en `main`. Este proyecto **no tiene un commit remoto nuevo verificado**.
+## Implementación pendiente de verificar
+- Contar fallos de recuperación fuera de la transacción que revierte al fallar.
+- Invalidar códigos al desactivar cuenta y rechazar su canje.
+- Limitar cuerpo y contraseña; no cachear API; cerrar conexiones SQLite.
+- Validar horas reales y cruces internos de un grupo.
+- Configuración de pesos de cortes y máximo de créditos, resúmenes por corte y créditos ponderados.
+- Nuevos endpoints de perfil, creación de docentes/estudiantes, edición de materia/grupo y evaluaciones por corte (extensions.py).
+- No están conectados todavía a formularios nuevos del frontend.
 
-## Rutas relevantes
+## Siguientes pasos en orden
+1. Ejecutar .venv\Scripts\python.exe -m pytest -q --tb=short con require_escalated y revisar fallos; no asumir 28 pruebas verdes.
+2. Revisar imports de extensions en main: se insertaron antes de create_course; compila, pero verificar rutas y lecturas de settings dentro de conexiones abiertas.
+3. UI: restaurar barra contextual de pistas que fue retirada en cambios remotos; añadir perfil editable, usuarios docente/estudiante, configuración, edición de catálogos y gestión de evaluaciones.
+4. Unificar porcentajes reales de servidor con simulador (remoto mezcla 30/30/40 y 33/33/34), eliminar supuestos ocultos de notas 4.0. Mostrar estimaciones explícitas y notas pendientes.
+5. Cursor: hoy alterna grosor del trazo, no cursor personalizado real; implementar pincel/lápiz y desactivar efecto. Reconocimiento actual también acepta círculos/cuadrados, corregir y probar triángulo.
+6. Ejecutar servidor real con datos TEMPORALES y Chromium headless directo HTTP, sin puentes simulados. Capturas, grabación, móvil/tableta/desktop, oscuro/claro, teclado y zoom.
+7. Corregir lanzadores: no hay Python registrado (py --list-paths vacío), pero .venv existe y funciona; hacer ABRIR-CRUZA robusto. No lanzar ventanas durante pruebas; usuario pide no controlar pantalla.
+8. Faltan docs/capturas y videos anunciados por README de Fidel: generarlos y actualizar README, VERIFICACION, RECORRIDO, arquitectura y reglas con evidencia propia.
+9. Registrar commit, publicar rama y verificar remoto; integrar main solo si funcional. Origin/main actualizado a 10cf09a al último fetch; nunca forzar push.
+10. Entregar carpeta/ZIP lista local, acceso sencillo, guion de exposición y enlaces exactos. No incluir BD con datos personales, .env ni secretos Git.
 
-- `/app/main.py`: endpoints, roles, CSRF, login, bloqueo, recuperación, matrícula, notas, agenda.
-- `/app/db.py`: tablas, usuarios de demostración, contraseñas PBKDF2, recuperación.
-- `/app/logic.py`: créditos, conflictos y ponderaciones.
-- `/app/static/app.js`: vista SPA, crucigrama, login, módulos, canvas y gestos.
-- `/app/static/app.css`: estilos, marfil, modo oscuro, animaciones, responsive.
-- `/app/cli.py`: arranque de administrador y recuperación de emergencia.
-- `/tests`: cálculos, rutas y capturas visuales aisladas.
-
-## Decisiones
-
-- Modo demo OFF por defecto para evitar credenciales públicas si se despliega accidentalmente.
-- Demo local ON mediante INICIAR-CRUZA.bat y `CRUZA_DEMO_MODE=1`.
-- No hay auto registro estudiantil. Admin verifica y aprueba.
-- No hay correo de recuperación; admin verifica por fuera y emite token 30 minutos, de un solo uso.
-- PAPA/PAPI son etiquetas pedagógicas; verificar terminología exacta UTS y reglamento 2026 antes de afirmar que son oficiales.
-- Los pesos de cortes, materias, créditos y límite 18 son ficticios.
-
-## Pendientes prioritarios
-
-1. **Probar el servidor en Windows** con instalación y navegador real. Resolver cualquier problema de dependencias, rutas, fuentes y clics.
-2. **Publicar en GitHub** `camachoab21-cmd/cruza` usando `PUBLICAR-GITHUB.ps1` desde el equipo con sesión autenticada, o conectar la cuenta correcta a GitHub; verificar commit remoto.
-3. **Invitar a Fidel, usuario `ISFRANT`**, con permiso Write desde Settings/Collaborators; verificar aceptación.
-4. Confirmar fórmulas/terminología académicas con la normativa más reciente de UTS.
-5. Añadir pruebas end-to-end HTTP reales con Chromium en Windows.
-6. Si se requiere uso institucional remoto: desplegar base de datos y servidor con HTTPS, secretos gestionados y auditoría de seguridad independiente.
-
-## Pruebas
-
-```bash
-PYTHONPATH=. CRUZA_DEMO_MODE=1 pytest -q
-PYTHONPATH=. CRUZA_DEMO_MODE=1 python tests/ui_smoke.py
-```
-
-`ui_smoke.py` usa transporte simulado solo por la restricción de Chromium de este entorno. No modifica la base de datos del usuario si se ejecuta con `CRUZA_DB_PATH` hacia una base de pruebas.
+## Herramientas
+Python local: .venv/Scripts/python.exe. Git y Node en PATH. Playwright instalado por pip; Chromium descargado en AppData/Local/ms-playwright.
+Credencial GitHub se usa en .local/github.mjs (ignorado, no contiene token persistido): consulta Git Credential Manager solo en memoria, valida /user y permisos; no imprimir secretos.
 
 ## Prompt para continuar
-
-> Continúa CRUZA 3 en la carpeta del repositorio `camachoab21-cmd/cruza`. Lee primero `CONTINUIDAD.md`, `REGLAS_NEGOCIO.md`, `ARQUITECTURA.md`, `VERIFICACION.md` y `README.md`. Conserva la versión autónoma original. Verifica el funcionamiento real en Windows, corrige los problemas visuales o de integración y publica un commit comprobado. Verifica que `ISFRANT` tiene permiso Write sin tocar datos privados de terceros. Mantén la separación de roles y las reglas de bloqueo al cuarto fallo, recuperación y matrícula. No declares despliegue o pruebas completadas sin ejecutarlas.
-
-
-## Cierre de esta revisión
-
-- Código preparado en `CRUZA3-ENTREGA-VERIFICADA`.
-- Se corrigió el login para contraseñas largas y la exigencia de créditos estrictamente enteros.
-- Se añadió un test de integración de interfaz/servidor: `tests/e2e_navegador_servidor.py` (**26 solicitudes** verificadas) y una prueba de créditos enteros.
-- Se creó el video de 46,5 s `docs/CRUZA3-VISITA-GUIADA.mp4` a partir de acciones verificadas, con acceso de capítulos desde `VER-RECORRIDO.html`.
-- Se añadió `ABRIR-CRUZA.bat` para iniciar la app con un doble clic desde Windows (requiere Python).
-- Total unit/integración de API: **19/19 aprobadas**; móvil 390×844 revisado mediante adaptador del navegador; navegación HTTP directa en Windows **pendiente**.
-- GitHub `camachoab21-cmd/cruza` e invitación a `ISFRANT`: **pendientes** por permisos de la conexión actual. No anunciar que están realizados.
+Continúa CRUZA desde esta carpeta y este documento. Conserva el aporte de Fidel y todos los respaldos. Completa interfaz, verifica las nuevas funciones y prueba HTTP real con Chromium headless. La suite original pasó; la nueva no está verificada. No controles la pantalla, no repitas la instalación, no reescribas en Node, no publiques como terminado algo no probado. Usuario autoriza arreglos y publicación, e invitación de escritura a ISFRANT ya enviada.

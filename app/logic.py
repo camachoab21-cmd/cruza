@@ -33,15 +33,18 @@ def time_conflicts(groups):
                             'reason':f"Cruce: {g['name']} y {h['name']}"})
     return issues
 
-def grade_summary(evaluations):
+def grade_summary(evaluations,cut_weights=None):
     """List dicts {term,weight,grade}; null grades stay null, not zero."""
-    byterm={}
-    for t in CUT_WEIGHTS:
+    weights={i+1:d(w)/100 for i,w in enumerate(cut_weights)} if cut_weights else CUT_WEIGHTS
+    byterm={};exact={}
+    for t in weights:
         subset=[e for e in evaluations if int(e['term'])==t]
-        done=bool(subset) and all(e.get('grade') is not None for e in subset)
+        valid=sum((d(e['weight']) for e in subset),d(0))==100
+        done=bool(subset) and valid and all(e.get('grade') is not None for e in subset)
         provisional=weighted([(e.get('grade'),e['weight']) for e in subset])
-        byterm[t]={'grade':provisional if done else None,'provisional':provisional,'complete':done}
-    final=weighted([(byterm[t]['grade'],CUT_WEIGHTS[t]) for t in CUT_WEIGHTS]) if all(v['complete'] for v in byterm.values()) else None
+        exact[t]=sum((d(e['grade'])*d(e['weight'])/100 for e in subset),d(0)) if done else None
+        byterm[t]={'grade':provisional if done else None,'provisional':provisional,'complete':done,'valid_weights':valid}
+    final=r2(sum((exact[t]*weights[t] for t in weights),d(0))) if all(v['complete'] for v in byterm.values()) else None
     return {'cuts':byterm,'final':final,'complete':final is not None}
 
 def period_average(attempts):
