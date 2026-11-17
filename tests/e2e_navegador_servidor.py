@@ -7,7 +7,7 @@ En el PC del usuario debe probarse también http://127.0.0.1:8765 directamente.
 Requiere: pip install playwright; playwright install chromium
 Ejecutar: python tests/e2e_navegador_servidor.py
 """
-import os,sys,time,socket,tempfile,subprocess,urllib.request,urllib.error,http.cookiejar,shutil
+import os,sys,time,socket,tempfile,subprocess,urllib.request,urllib.error,http.cookiejar,shutil,re
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
@@ -29,8 +29,12 @@ def main():
     except Exception:time.sleep(.1)
    else:raise RuntimeError('El servidor de prueba no inició.')
    html=(ROOT/'app/templates/index.html').read_text(encoding='utf8')
-   html=html.replace('<link rel="stylesheet" href="/static/app.css">','<style>'+(ROOT/'app/static/app.css').read_text(encoding='utf8')+'</style>')
-   html=html.replace('<script defer src="/static/app.js"></script>','')
+   # El HTML usa cache-busting (?v=...), por eso no basta una sustitución literal.
+   css=(ROOT/'app/static/app.css').read_text(encoding='utf8')
+   html,n_css=re.subn(r'<link\\s+rel="stylesheet"\\s+href="/static/app\\.css[^"]*"\\s*/?>',lambda _: '<style>'+css+'</style>',html,count=1)
+   assert n_css==1,'No se pudo incorporar el CSS auténtico de CRUZA'
+   html,n_js=re.subn(r'<script\\s+defer\\s+src="/static/app\\.js[^"]*"\\s*>\\s*</script>','',html,count=1)
+   assert n_js==1,'No se pudo localizar el script auténtico de CRUZA'
    shim='''<script>
    const store={};Object.defineProperty(window,'localStorage',{configurable:true,value:{getItem(k){return store[k]??null},setItem(k,v){store[k]=String(v)}}});
    window.fetch=async(url,options={})=>{const r=await window.cruzaBridge({url:String(url),method:options.method||'GET',headers:options.headers||{},body:options.body||null});return new Response(r.body,{status:r.status,headers:{'Content-Type':'application/json'}})};
