@@ -31,9 +31,9 @@ def main():
    html=(ROOT/'app/templates/index.html').read_text(encoding='utf8')
    # El HTML usa cache-busting (?v=...), por eso no basta una sustitución literal.
    css=(ROOT/'app/static/app.css').read_text(encoding='utf8')
-   html,n_css=re.subn(r'<link\\s+rel="stylesheet"\\s+href="/static/app\\.css[^"]*"\\s*/?>',lambda _: '<style>'+css+'</style>',html,count=1)
+   html,n_css=re.subn(r'<link\s+rel="stylesheet"\s+href="/static/app\.css[^"]*"\s*/?>',lambda _: '<style>'+css+'</style>',html,count=1)
    assert n_css==1,'No se pudo incorporar el CSS auténtico de CRUZA'
-   html,n_js=re.subn(r'<script\\s+defer\\s+src="/static/app\\.js[^"]*"\\s*>\\s*</script>','',html,count=1)
+   html,n_js=re.subn(r'<script\s+defer\s+src="/static/app\.js[^"]*"\s*>\s*</script>','',html,count=1)
    assert n_js==1,'No se pudo localizar el script auténtico de CRUZA'
    shim='''<script>
    const store={};Object.defineProperty(window,'localStorage',{configurable:true,value:{getItem(k){return store[k]??null},setItem(k,v){store[k]=String(v)}}});
