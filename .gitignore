@@ -1,6 +1,11 @@
+.venv/
 node_modules/
 data/
 .local/
 .superpowers/
 .env
+__pycache__/
+.pytest_cache/
+*.pyc
+*.sqlite3*
 *.log
