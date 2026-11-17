@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CRUZA">
+  <rect width="64" height="64" rx="14" fill="#172942"/>
+  <g fill="#fff6e8" stroke="#d1c6b4" stroke-width="1.5">
+    <rect x="8" y="8" width="23" height="23" rx="4"/>
+    <rect x="33" y="8" width="23" height="23" rx="4"/>
+    <rect x="8" y="33" width="23" height="23" rx="4"/>
+    <rect x="33" y="33" width="23" height="23" rx="4"/>
+  </g>
+  <g fill="#26375a" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">
+    <text x="19.5" y="25">C</text><text x="44.5" y="25">R</text>
+    <text x="19.5" y="50">U</text><text x="44.5" y="50">Z</text>
+  </g>
+  <circle cx="57" cy="57" r="5" fill="#b2e4c2"/>
+</svg>
