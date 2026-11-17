@@ -2,14 +2,14 @@
 /* CRUZA 3.0 — interfaz sin dependencias externas. Toda operación académica pasa por la API. */
 const root=document.getElementById('app');
 const state={user:null,csrf:null,data:null,page:'tablero',busy:false,loginShow:false,
-  draftMobile:'materias',filterText:'',filterType:'',filterSemester:'',calendarDate:'2026-11-11',
+  draftMobile:'materias',filterText:'',filterType:'',filterSemester:'',calendarDate:localDate(),
   agendaDone:false,teacherGroup:null,editReminder:null,courseSim:{},roleNavigation:false,
-  ambientTool:'brush',ambientEnabled:true,loginUser:'',loginPass:''};
+  ambientTool:localStorage.getItem('cruza-tool')||'brush',ambientEnabled:localStorage.getItem('cruza-effects')!=='0',loginUser:'',loginPass:''};
 const roleMenu={student:[['tablero','Mi tablero'],['pensum','Pensum'],['inscripcion','Inscripción'],
  ['horario','Horario'],['calendario','Calendario'],['agenda','Mi agenda'],['notas','Notas'],
- ['historial','Historial'],['perfil','Perfil']],
+ ['asistencia','Asistencia'],['historial','Historial'],['perfil','Perfil']],
  teacher:[['notas','Notas'],['asistencia','Asistencia']],
- admin:[['estudiantes','Estudiantes'],['recuperacion','Recuperación'],['catalogo','Catálogo'],['auditoria','Auditoría']]};
+ admin:[['estudiantes','Usuarios'],['recuperacion','Recuperación'],['catalogo','Catálogo'],['auditoria','Auditoría']]};
 const roleNames={student:'Estudiante',teacher:'Docente',admin:'Administrador'};
 const shortDay=['Lun','Mar','Mie','Jue','Vie','Sab'];
 const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -72,7 +72,7 @@ function renderLogin(){state.page='login';document.body.classList.remove('sideba
    e.addEventListener('blur',()=>tileRefresh(id));e.addEventListener('click',()=>tileRefresh(id));
    e.addEventListener('keyup',()=>tileRefresh(id));tileRefresh(id);
  }
- document.getElementById('login-form').addEventListener('submit',loginSubmit);
+ document.getElementById('login-form').addEventListener('submit',loginSubmit);applyExperience();
 }
 function tileRefresh(id){const input=document.getElementById(id),tileRoot=document.querySelector(`[data-tiles="${id}"]`);
  if(!input||!tileRoot)return;const text=input.value;
@@ -107,12 +107,12 @@ async function loginSubmit(e){e.preventDefault();if(state.busy)return;
    document.querySelectorAll('.auth-tile.filled').forEach(t=>t.classList.add('fail'));
  }finally{state.busy=false;const button=document.getElementById('login-button');if(button){button.disabled=false;button.textContent='Entrar al campus ↗'}}
 }
-async function boot(){try{const data=await api('/session');state.user=data.user;state.csrf=data.csrf;
+async function boot(){try{const data=await api('/session');state.user=data.user;state.csrf=data.csrf;state.demo=data.demo;
   if(state.user){state.page=roleMenu[state.user.role][0][0];await reloadData()}else renderLogin();
  }catch(err){root.innerHTML=`<div class="card" style="margin:12vh auto;max-width:600px"><h1>Sin conexión</h1><p>${escapeHtml(err.message)}</p>
- <button onclick="location.reload()">Reintentar</button></div>`}}
+ <button data-action="retry">Reintentar</button></div>`}}
 async function reloadData(){if(!state.user){renderLogin();return;}
- state.data=await api(state.user.role==='student'?'/student':state.user.role==='teacher'?'/teacher':'/admin');render();}
+ state.data=await api(state.user.role==='student'?'/student':state.user.role==='teacher'?'/teacher':'/admin');if(state.data.profile)state.user.full_name=state.data.profile.full_name;render();}
 function sideBar(){const menu=roleMenu[state.user.role];return `<aside class="sidebar" id="sidebar">${brand()}<div>
  <div class="eyebrow" style="margin:0 0 14px">${escapeHtml(roleNames[state.user.role])} / SECCIONES</div><nav aria-label="Secciones del campus">
  ${menu.map(([key,text],i)=>`<button class="navbtn ${state.page===key?'active':''}" data-action="route" data-route="${key}" aria-current="${state.page===key?'page':'false'}">
@@ -137,12 +137,12 @@ function pageContent(){switch(state.user.role){
  }}
 function render(){if(!state.user){renderLogin();return;}
  if(!roleMenu[state.user.role].some(([r])=>r===state.page))state.page=roleMenu[state.user.role][0][0];
- root.innerHTML=shell();
+ root.innerHTML=shell();applyExperience();
  if(state.page==='tablero')requestAnimationFrame(mountPowder);
  if(state.page==='inscripcion')requestAnimationFrame(mountPowder);
 }
 function navigate(to){if(!state.user)return;if(!roleMenu[state.user.role].some(([r])=>r===to)){notify('No tienes permisos para entrar en este módulo.');return;}
- state.page=to;state.roleNavigation=false;render();window.scrollTo({top:0,behavior:'instant'});
+ modalClose();state.page=to;state.roleNavigation=false;render();window.scrollTo({top:0,behavior:'instant'});
 }
 const hints={tablero:'Tablero: cada palabra es una ruta de tu vida académica.',pensum:'Pensum: identifica las materias obligatorias, optativas y de libre elección.',
  inscripcion:'Inscripción: compara tu borrador con el horario vigente antes de confirmar.',horario:'Horario: consulta las clases que ya están confirmadas.',
@@ -171,7 +171,7 @@ function dashboard(){const d=state.data;const courses=d.draft.confirmed;const ne
  `<div class="grid-2"><div>${crossword()}</div><section class="card">
  <div class="eyebrow">ESTADO ACTUAL</div><h2>Una palabra a la vez.</h2>
  <p class="muted">Las conexiones también se construyen con pequeños avances.</p>
- <div class="list"><div class="item"><strong>Próxima clase</strong><span>${next?escapeHtml(next.name):'Sin materias'}</span></div>
+ <div class="list"><div class="item"><strong>Materia inscrita</strong><span>${next?escapeHtml(next.name):'Sin materias'}</span></div>
  <div class="item"><strong>Materias vigentes</strong><span>${courses.length}</span></div>
  <div class="item"><strong>Agenda</strong><span>${d.agenda.filter(x=>!x.done).length} pendientes</span></div></div>
  <div class="actions">${linkRoute('Abrir horario ↗','horario','btn-lime')}${linkRoute('Ver agenda','agenda')}</div></section></div>
@@ -191,10 +191,10 @@ function conflictsFor(groups){const out=[];for(let i=0;i<groups.length;i++)for(l
  if(a.day===b.day&&a.start<b.end&&b.start<a.end)out.push({a:groups[i].id,b:groups[j].id,day:a.day,start:a.start>b.start?a.start:b.start});}return out;}
 function timeGrid(groups,confirmed=[],compact=false){const all=[...groups,...confirmed.filter(x=>!groups.some(g=>g.course_id===x.course_id))];
  const issues=conflictsFor(groups);const conflictIds=new Set(issues.flatMap(x=>[x.a,x.b]));const currentIds=new Set(confirmed.map(x=>x.group_id||x.id));
- const rows=['08:00','10:00','12:00','14:00','16:00','18:00'];
+ const rows=[...new Set(['08:00','10:00','12:00','14:00','16:00','18:00',...all.flatMap(g=>g.sessions.map(s=>s.start))])].sort();
  let html=`<div class="${compact?'table-fit':'table-scroll'}"><table class="schedule-table ${compact?'compact':''}"><thead><tr><th>HORA</th>`+
- shortDay.slice(0,5).map(day=>`<th>${day}</th>`).join('')+'</tr></thead><tbody>';
- for(const hour of rows){html+=`<tr><th>${hour}</th>`;for(const day of shortDay.slice(0,5)){
+ shortDay.map(day=>`<th>${day}</th>`).join('')+'</tr></thead><tbody>';
+ for(const hour of rows){html+=`<tr><th>${hour}</th>`;for(const day of shortDay){
  const events=all.filter(g=>g.sessions.some(s=>s.day===day&&s.start<=hour&&s.end>hour));
  html+=`<td>${events.map(g=>{
   const inNew=groups.includes(g),old=confirmed.some(x=>x.course_id===g.course_id&&(x.group_id||x.id)===g.id);
@@ -209,7 +209,7 @@ function enrollment(){const d=state.data,selected=d.draft.selected;let courses=d
  const filtered=courses.filter(c=>[c.name,c.code].some(t=>t.toLowerCase().includes(state.filterText.toLowerCase()))
  &&(!state.filterType||c.category===state.filterType)&&(!state.filterSemester||String(c.semester)===state.filterSemester));
  const current=new Set(d.draft.group_ids);
- const badges=`${labelTag('BORRADOR','purple')} ${labelTag(`${d.draft.credits} / 18 créditos`,'lime')}`;
+ const badges=`${labelTag('BORRADOR','purple')} ${labelTag(`${d.draft.credits} / ${d.settings.max_credits} créditos`,'lime')}`;
  const errors=d.draft.problems.map(p=>`<div class="notice danger">${escapeHtml(p.reason)}${p.day?' · '+p.day+' '+p.start:''}</div>`).join('');
  const menu=`<div class="card" style="margin-bottom:16px"><div class="form-grid"><div class="field"><label for="course-search">Buscar materias</label>
  <input id="course-search" value="${escapeHtml(state.filterText)}" placeholder="Nombre o código" data-hint="Busca en el catálogo del período."></div>
@@ -250,7 +250,7 @@ function calendar(){const acts=state.data.activities;const today=state.calendarD
  const yr=Number(today.slice(0,4)),month=Number(today.slice(5,7));const first=new Date(yr,month-1,1),days=new Date(yr,month,0).getDate();
  const lead=(first.getDay()+6)%7;
  const fmt=n=>`${yr}-${String(month).padStart(2,'0')}-${String(n).padStart(2,'0')}`;
- let cells=shortDay.slice(0,5).concat(['Sab','Dom']).map(day=>`<div class="eyebrow" style="text-align:center">${day}</div>`).join('');
+ let cells=shortDay.concat(['Sab','Dom']).map(day=>`<div class="eyebrow" style="text-align:center">${day}</div>`).join('');
  for(let i=0;i<lead;i++)cells+='<span></span>';
  for(let n=1;n<=days;n++){
  const iso=fmt(n),items=acts.filter(a=>a.due_date===iso);const statuses=items.map(x=>x.state);
@@ -279,41 +279,7 @@ function agendaPage(){const all=state.data.agenda;const list=all.filter(x=>state
  ${btn('Eliminar','agenda-delete','btn-mini btn-danger',`data-agenda-id="${x.id}"`)}</div></div>`).join(''):
  '<div class="notice">Aquí todavía no hay recordatorios. Crea uno desde el botón superior.</div>'}</div>`;
 }
-function crosswordCalculator(all){
- if(!all||!all.length)return '';
- const selectedId=state.courseSim?.courseId||all[0].course_id;
- const c=all.find(x=>x.course_id===selectedId)||all[0];
- const targetScore=state.courseSim?.grade??4.5;
- const c1=c.summary.cuts[1]?.complete?c.summary.cuts[1].grade:4.0;
- const c2=c.summary.cuts[2]?.complete?c.summary.cuts[2].grade:4.0;
- const c3=targetScore;
- const simulated=(c1*0.33)+(c2*0.33)+(c3*0.34);
- const codeTiles=(c.code||'WEB').toUpperCase().replace(/[^A-Z0-9]/g,'').split('').map(l=>`<span class="word-tile">${l}</span>`).join('');
- return `<section class="crossword-calc"><div class="between" style="align-items:flex-start">
- <div><div class="eyebrow">PISTA ESPECIAL · CÁLCULO DE CRUCIGRAMA</div>
- <h2 style="margin:4px 0 8px">Calculadora <em>de Casillas.</em></h2>
- <div class="word-tiles" aria-hidden="true">${codeTiles}</div></div>
- <div class="field" style="margin:0;min-width:200px"><label for="simulate-course" class="small">Materia a calcular</label>
- <select id="simulate-course" data-action="sim-select-course">
- ${all.map(x=>`<option value="${x.course_id}" ${x.course_id===selectedId?'selected':''}>${escapeHtml(x.name)}</option>`).join('')}</select></div></div>
- <div class="calc-equation">
-   <div class="calc-tile"><span class="calc-num">01</span><span class="calc-pct">CORTE 1 · 33%</span><span class="calc-val">${number(c1)}</span></div>
-   <span class="calc-operator">+</span>
-   <div class="calc-tile"><span class="calc-num">02</span><span class="calc-pct">CORTE 2 · 33%</span><span class="calc-val">${number(c2)}</span></div>
-   <span class="calc-operator">+</span>
-   <div class="calc-tile unknown"><span class="calc-num">03 ?</span><span class="calc-pct">CORTE 3 · 34%</span><span class="calc-val" id="sim-target-val">${number(c3)}</span></div>
-   <span class="calc-operator">=</span>
-   <div class="calc-tile result"><span class="calc-num">DEF</span><span class="calc-pct">DEFINITIVA RESUELTA</span><span class="calc-val" id="simulate-result">${number(simulated)}</span></div>
- </div>
- <div class="calc-dial">
-   <span class="eyebrow">CASILLA INCÓGNITA:</span>
-   <div class="calc-quick-tiles">
-     ${[3.0,3.5,4.0,4.5,5.0].map(v=>`<button type="button" class="calc-quick-tile ${Math.abs(targetScore-v)<0.05?'active':''}" data-action="sim-quick" data-grade="${v}">${v.toFixed(1).replace('.',',')}</button>`).join('')}
-   </div>
-   <input type="number" min="0" max="5" step=".1" id="simulate-grade" value="${targetScore}" style="width:70px;padding:8px;font:700 1.1rem Consolas,monospace;border:2px solid #8ea775;border-radius:6px;background:var(--paper2);text-align:center">
-   ${btn('Calcular estimación','simulate','btn-lime btn-mini','style="display:none"')}
- </div></section>`;
-}
+function crosswordCalculator(all){return simulationPanel(all);}
 function gradesPage(){const d=state.data;const all=d.grades;const att=d.attendance||[];const absences=att.filter(x=>!x.present);
  const attByCourse=att.reduce((acc,cur)=>{(acc[cur.course]=acc[cur.course]||[]).push(cur);return acc},{});
  return head('05 · HORIZONTAL','Notas y Calificaciones. <em>Cada avance cuenta.</em>','Cada casilla resuelta completa tu mapa académico del período.')+
@@ -323,13 +289,13 @@ function gradesPage(){const d=state.data;const all=d.grades;const att=d.attendan
  <div class="courses">${all.map(c=>`<article class="course-grades-card"><div class="course-grades-head">
  <div><div class="eyebrow">${escapeHtml(c.code)} · ${c.credits} CRÉDITOS</div><h2 style="margin:5px 0 0">${escapeHtml(c.name)}</h2></div>
  <div class="def-tile" title="Nota definitiva"><span class="def-label">DEFINITIVA</span><span class="def-val">${number(c.summary.final)}</span></div></div>
- <div class="corte-tiles">${[1,2,3].map(t=>{const cut=c.summary.cuts[t],isComplete=cut.complete,pct=t===3?'34%':'33%';
+ <div class="corte-tiles">${[1,2,3].map(t=>{const cut=c.summary.cuts[t],isComplete=cut.complete,pct=cutWeights()[t-1]+'%';
  return `<div class="corte-cell ${isComplete?'complete':'pending'}"><div class="corte-header"><span class="corte-tag">Corte ${t}</span>
  <span class="corte-pct">${pct}</span></div><div class="corte-val">${isComplete?number(cut.grade):'—'}</div></div>`;}).join('')}</div>
- <div class="tiny muted" style="font-family:Consolas,monospace;background:var(--wash);padding:4px 8px;border-radius:5px">Ponderación del corte: 30% Trabajos independientes · 60% Parcial · 10% Autoevaluación</div>
- <div class="corte-evals">${c.evaluations.map(e=>`${escapeHtml(e.name)}: <strong>${e.grade===null?'Pendiente':number(e.grade)}</strong>`).join(' &nbsp;·&nbsp; ')}</div>
+ <div class="tiny muted" style="font-family:Consolas,monospace;background:var(--wash);padding:4px 8px;border-radius:5px">Evaluaciones y pesos definidos por el docente; cada corte suma 100%.</div>
+ <div class="corte-evals">${c.evaluations.map(e=>`Corte ${e.term} · ${escapeHtml(e.name)} (${e.weight}%): <strong>${e.grade===null?'Pendiente':number(e.grade)}</strong>`).join(' &nbsp;·&nbsp; ')}</div>
  </article>`).join('')}</div>
- ${crosswordCalculator(all)}
+ ${academicMetrics()}${crosswordCalculator(all)}
  <section class="card canvas-grid" style="margin-top:24px"><div class="between"><div><div class="eyebrow">CONTROL DE ASISTENCIAS E INASISTENCIAS</div><h2 style="margin:4px 0 0">Presencia <em>en clase.</em></h2></div>
  <div class="row-left"><span class="pill ${absences.length?'danger':'ok'}">${absences.length} ${absences.length===1?'inasistencia':'inasistencias'} registradas</span></div></div>
  ${att.length?`<div class="attendance-summary">${Object.entries(attByCourse).map(([courseName,rows])=>{
@@ -355,24 +321,7 @@ function historyPage(){const d=state.data,rows=d.summary.history;
  ${rows.map(r=>`<tr><td>${escapeHtml(r.period)}</td><td>${escapeHtml(r.name)}<div class="tiny muted">${escapeHtml(r.code)}</div></td>
  <td>${r.credits}</td><td><span class="grade-val">${number(r.grade)}</span></td></tr>`).join('')}</tbody></table></div></div>`;
 }
-function profilePage(){const u=state.data.profile;const s=state.data.summary;
- const nameTiles=(u.full_name||'CRUZA').toUpperCase().replace(/[^A-Z]/g,'').slice(0,8).split('').map((c,i)=>`<span class="word-tile" style="--i:${i}">${c}</span>`).join('');
- return head('10 · VERTICAL','Perfil. <em>Identidad académica.</em>','Carné de estudiante y credenciales en el tablero.')+
- `<div class="stats">${stat('PROMEDIO ACUMULADO',number(s?.papa),'Calificación ponderada histórica','purple')}
- ${stat('SEMESTRE ACTUAL',escapeHtml(s?.period_label||'2026-2'),'Período académico vigente','lime')}
- ${stat('CRÉDITOS APROBADOS',s?.credits_approved||0,'Total créditos del plan','peach')}</div>
- <div class="grid-2"><section class="card canvas-grid"><div class="eyebrow">CARNÉ ACADÉMICO / CASILLAS</div><h2>${escapeHtml(u.full_name)}</h2>
- <div class="word-tiles" style="margin:14px 0" aria-hidden="true">${nameTiles}</div>
- <div class="list"><div class="item"><div><div class="mon muted">01 · USUARIO</div><strong>${escapeHtml(u.username)}</strong></div><span class="pill">Activo</span></div>
- <div class="item"><div><div class="mon muted">02 · CORREO INSTITUCIONAL</div><strong>${escapeHtml(u.email)}</strong></div></div>
- <div class="item"><div><div class="mon muted">03 · SEMESTRE Y PERÍODO</div><strong>${escapeHtml(s?.period_label||'2026-2')}</strong></div><span class="pill lime">Vigente</span></div>
- <div class="item"><div><div class="mon muted">04 · PROMEDIO PONDERADO</div><strong style="font-size:1.3rem;color:var(--ok)">${number(s?.papa)}</strong></div><span class="grade-val">${number(s?.papa)}</span></div>
- <div class="item"><div><div class="mon muted">05 · ROL DEL SISTEMA</div><strong>Estudiante UTS</strong></div></div></div></section>
- <section class="card"><h2>Acceso <em>personal.</em></h2><p class="muted">El estudiante puede consultar sus credenciales institucionales y solicitar restablecimiento de contraseña ante administración.</p>
- <div class="crossword-calc" style="margin-top:16px"><div class="eyebrow" style="margin-bottom:8px">FIRMA EN CRUCIGRAMA</div>
- <div class="stair-grid" aria-hidden="true">${'CRUZA'.split('').map(c=>`<span>${c}</span>`).join('')}</div></div>
- </section></div>`;
-}
+function profilePage(){return renderEditableProfile();}
 function teacherNotes(){const gs=state.data.groups;const choice=state.teacherGroup||gs[0]?.id;
  state.teacherGroup=choice;
  const group=gs.find(x=>x.id===choice);
@@ -380,7 +329,7 @@ function teacherNotes(){const gs=state.data.groups;const choice=state.teacherGro
  `<section class="card"><div class="between"><div><div class="eyebrow">MIS GRUPOS</div><h2>Control <em>de notas.</em></h2></div>
  <div class="field"><label for="teacher-group">Selecciona grupo</label><select id="teacher-group" data-hint="Selecciona uno de tus grupos asignados.">
  ${gs.map(g=>`<option value="${g.id}" ${choice===g.id?'selected':''}>${escapeHtml(g.name)} · ${escapeHtml(g.code)}</option>`).join('')}</select></div></div>
- ${group?`<div class="notice">${escapeHtml(group.name)} · ${escapeHtml(group.room)} · ${group.students.length} estudiantes</div>
+ ${group?`<div class="notice">${escapeHtml(group.name)} · ${escapeHtml(group.room)} · ${group.students.length} estudiantes</div><div class="actions">${btn('Configurar evaluaciones y pesos','evaluations-edit','btn-mini btn-lime',`data-id="${group.id}"`)}</div>
  ${group.students.length?group.students.map(student=>`<div class="teach-student"><div class="between"><div><strong>${escapeHtml(student.full_name)}</strong><div class="mon muted">${escapeHtml(student.username)}</div></div>
  ${labelTag(student.summary.complete?`Definitiva ${number(student.summary.final)}`:'Evaluaciones pendientes',student.summary.complete?'lime':'pill-muted')}</div>
  <div class="field" style="margin-top:12px"><label for="reason-${student.id}">Motivo si corriges una nota publicada</label>
@@ -391,7 +340,7 @@ function teacherNotes(){const gs=state.data.groups;const choice=state.teacherGro
 }
 function attendancePage(){const gs=state.data.groups,choice=state.teacherGroup||gs[0]?.id;state.teacherGroup=choice;
  const group=gs.find(g=>g.id===choice);
- const today=new Date().toISOString().slice(0,10);
+ const today=localDate();
  return head('D2','Asistencia. <em>Presente en cada clase.</em>','Registra asistencias exclusivamente en tus grupos y con fecha específica.')+
  `<section class="card"><div class="form-grid"><div class="field"><label for="attendance-group">Grupo asignado</label><select id="attendance-group">
  ${gs.map(g=>`<option value="${g.id}" ${choice===g.id?'selected':''}>${escapeHtml(g.name)} · ${escapeHtml(g.code)}</option>`).join('')}</select></div>
@@ -403,14 +352,14 @@ function attendancePage(){const gs=state.data.groups,choice=state.teacherGroup||
  </section>`;
 }
 function adminUsers(){const d=state.data;
- return head('A1','Administración. <em>Las personas detrás de las piezas.</em>','Las cuentas de estudiantes son creadas internamente y necesitan aprobación.',btn('Crear estudiante +','student-new','btn-primary'))+
+ return head('A1','Administración. <em>Las personas detrás de las piezas.</em>','Administra estudiantes y docentes: creación, aprobación y control de acceso.',btn('Crear usuario +','user-new','btn-primary'))+
  `<div class="stats">${stat('ESTUDIANTES ACTIVOS',d.users.filter(u=>u.role==='student'&&u.status==='active').length,'Cuentas habilitadas','lime')}
  ${stat('PENDIENTES',d.users.filter(u=>u.role==='student'&&u.status==='pending').length,'Por aprobar','purple')}
  ${stat('BLOQUEADOS',d.users.filter(u=>u.status==='locked').length,'Requieren recuperación','peach')}</div>
  <section class="card"><h2>Directorio <em>de acceso.</em></h2><div class="table-scroll"><table class="table"><thead>
  <tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Intentos</th><th>Acciones</th></tr></thead><tbody>
  ${d.users.map(u=>`<tr><td><strong>${escapeHtml(u.full_name)}</strong><div class="mon muted">${escapeHtml(u.username)}</div></td>
- <td>${escapeHtml(roleNames[u.role])}</td><td>${labelTag(u.status,u.status==='active'?'ok':u.status==='locked'?'danger':'pill-muted')}</td>
+ <td>${escapeHtml(roleNames[u.role])}</td><td>${labelTag(({active:'Activo',pending:'Pendiente',locked:'Bloqueado',disabled:'Desactivado',reset_pending:'Por habilitar'})[u.status]||u.status,u.status==='active'?'ok':u.status==='locked'?'danger':'pill-muted')}</td>
  <td>${u.failed}</td><td><div class="row-left">
  ${u.status==='pending'?btn('Aprobar','user-status','btn-mini btn-lime',`data-id="${u.id}" data-status="active"`):''}
  ${u.status==='reset_pending'?btn('Habilitar','user-status','btn-mini btn-lime',`data-id="${u.id}" data-status="active"`):''}
@@ -431,13 +380,13 @@ function adminRecovery(){const requests=state.data.recovery;
 }
 function adminCatalogue(){const d=state.data;
  return head('A3','Catálogo. <em>Construye el mapa.</em>','Gestiona materias, créditos enteros, grupos y franjas.',
- btn('Nueva materia +','course-new','btn-primary')+btn('Nuevo grupo +','group-new','btn-lime'))+
- `<div class="grid-2"><section class="card"><h2>Materias <em>del plan.</em></h2>
+ btn('Nueva materia +','course-new','btn-primary')+btn('Nuevo grupo +','group-new-complete','btn-lime'))+
+ settingsPanel()+`<div class="grid-2"><section class="card"><h2>Materias <em>del plan.</em></h2>
  <div class="list">${d.courses.map(c=>`<div class="item"><div><div class="mon muted">${escapeHtml(c.code)} · Sem ${c.semester}</div>
- <strong>${escapeHtml(c.name)}</strong></div><div class="row-left">${labelTag(`${c.credits} créditos`,'lime')}${labelTag(c.category,tagCat(c.category))}</div></div>`).join('')}</div></section>
+ <strong>${escapeHtml(c.name)}</strong></div><div class="row-left">${labelTag(`${c.credits} créditos`,'lime')}${labelTag(c.category,tagCat(c.category))}${btn('Editar','course-edit','btn-mini',`data-id="${c.id}"`)}</div></div>`).join('')}</div></section>
  <section class="card"><h2>Grupos <em>ofertados.</em></h2><div class="list">${d.groups.map(g=>`<div class="item"><div><div class="mon muted">${escapeHtml(g.course_code)} / GRUPO ${escapeHtml(g.code)}</div><strong>${escapeHtml(g.name)}</strong>
  <div class="small muted">${escapeHtml(g.teacher||'Sin docente')} · ${escapeHtml(g.room)} · ${g.capacity} cupos</div>
- <div class="tiny">${g.sessions.map(s=>`${s.day} ${s.start}–${s.end}`).join(' · ')}</div></div></div>`).join('')}</div></section></div>`;
+ <div class="tiny">${g.sessions.map(s=>`${s.day} ${s.start}–${s.end}`).join(' · ')}</div></div>${btn('Editar grupo','group-edit','btn-mini',`data-id="${g.id}"`)}</div>`).join('')}</div></section></div>`;
 }
 function adminAudit(){const rows=state.data.audit;
  return head('A4','Auditoría. <em>Cada cambio deja una pista.</em>','Historial de eventos sensibles, sin registrar contraseñas ni códigos de recuperación.')+
@@ -473,7 +422,7 @@ function modalRecovery(){modal('Recuperar acceso',`<p>Si tu cuenta está bloquea
  <div class="actions"><button class="btn-lime" type="submit">Restablecer contraseña</button></div></form>`)}
 function modalAgenda(id=null,preset=null){const x=id!==null?state.data.agenda.find(y=>y.id===Number(id)):null;
  state.editReminder=x?.id??null;
- const init=x||{title:preset?.title||'',due_date:preset?.due_date||new Date().toISOString().slice(0,10),due_time:'',description:preset?.description||'',course_id:null};
+ const init=x||{title:preset?.title||'',due_date:preset?.due_date||localDate(),due_time:'',description:preset?.description||'',course_id:null};
  modal(x?'Editar recordatorio':'Nueva tarea o recordatorio',`<form id="agenda-form"><div class="form-grid">
  <div class="field full"><label for="ag-title">Título</label><input id="ag-title" name="title" required maxlength="100" value="${escapeHtml(init.title)}"></div>
  <div class="field"><label for="ag-date">Fecha</label><input id="ag-date" name="due_date" type="date" required value="${escapeHtml(init.due_date)}"></div>
@@ -509,8 +458,12 @@ function modalGroup(){const d=state.data,teachers=d.users.filter(x=>x.role==='te
  <div class="field"><label>Fin</label><input name="end" type="time" value="10:00"></div></div>
  <div class="actions"><button class="btn-primary" type="submit">Crear grupo</button></div></form>`)}
 async function changeServer(path,method,body=null,message='Cambios guardados.'){
- try{const res=await api(path,method,body);if(res.message)notify(res.message);else notify(message);modalClose();await reloadData();return res}
- catch(e){notify(e.message,'error');return null}
+ if(state.mutating)return null;state.mutating=true;
+ const buttons=[...document.querySelectorAll('form button[type="submit"],form button:not([type])')];buttons.forEach(b=>b.disabled=true);
+ document.querySelectorAll('.form-error').forEach(e=>e.textContent='');
+ try{const res=await api(path,method,body);notify(res.message||message);modalClose();await reloadData();return res}
+ catch(e){notify(e.message,'error');const el=document.querySelector('.overlay .form-error')||document.querySelector('.form-error');if(el)el.textContent=e.message;return null}
+ finally{state.mutating=false;buttons.forEach(b=>b.disabled=false)}
 }
 const formData=f=>Object.fromEntries(new FormData(f).entries());
 document.addEventListener('submit',async e=>{
@@ -634,7 +587,7 @@ document.addEventListener('click',async e=>{
 });
 document.addEventListener('change',async e=>{
  const el=e.target;
- if(el.id==='simulate-course'){state.courseSim={courseId:Number(el.value),grade:state.courseSim?.grade??4.5};render();return}
+ if(el.id==='simulate-course'){state.courseSim={courseId:Number(el.value),values:{}};render();return}
  if(el.id==='teacher-group'||el.id==='attendance-group'){state.teacherGroup=Number(el.value);render();return}
  if(el.id==='course-filter'){state.filterType=el.value;render();return}
  if(el.id==='semester-filter'){state.filterSemester=el.value;render();return}
@@ -646,28 +599,9 @@ document.addEventListener('change',async e=>{
  }
 });
 document.addEventListener('input',e=>{
- if(e.target.id==='simulate-grade'){
-  const val=Number(e.target.value);
-  if(Number.isFinite(val)&&val>=0&&val<=5){
-   const cid=Number(document.getElementById('simulate-course')?.value);
-   state.courseSim={courseId:cid,grade:val};
-   const c=state.data?.grades?.find(x=>x.course_id===cid);
-   if(c){
-    const c1=c.summary.cuts[1]?.complete?c.summary.cuts[1].grade:4.0;
-    const c2=c.summary.cuts[2]?.complete?c.summary.cuts[2].grade:4.0;
-    const sim=(c1*0.33)+(c2*0.33)+(val*0.34);
-    const resEl=document.getElementById('simulate-result');if(resEl)resEl.textContent=number(sim);
-    const targetEl=document.getElementById('sim-target-val');if(targetEl)targetEl.textContent=number(val);
-   }
-  }
-  return;
- }
- if(e.target.id==='course-search'){state.filterText=e.target.value;
-  // Keep focus and caret by replacing only cards (avoid rerendering the whole form).
-  const list=document.querySelector('.courses');if(list){
-   const val=state.filterText.toLowerCase();for(const card of list.children){const show=card.textContent.toLowerCase().includes(val);
-    card.hidden=!show;}}
- }
+
+ if(e.target.id==='course-search'){const cursor=e.target.selectionStart;state.filterText=e.target.value;render();const input=document.getElementById('course-search');input?.focus();input?.setSelectionRange(cursor,cursor);}
+
 });
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'&&document.querySelector('.overlay')){modalClose();return}
@@ -690,7 +624,7 @@ function toggleTheme(){const next=document.documentElement.dataset.theme==='dark
 function applyTheme(){const saved=localStorage.getItem('cruza-theme');document.documentElement.dataset.theme=
   saved||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');}
 function toggleTool(){state.ambientTool=state.ambientTool==='brush'?'pencil':'brush';
- notify(state.ambientTool==='brush'?'Pincel de tinta activado':'Lápiz de crucigrama activado');}
+ localStorage.setItem('cruza-tool',state.ambientTool);applyExperience();notify(state.ambientTool==='brush'?'Pincel de tinta activado':'Lápiz de crucigrama activado');}
 /* Canvas pigment: only on the free background. Triangle gesture swaps brush/pencil;
    no pointer events intercepted and no trailing animation when pigment settles. */
 const backgroundCanvas=document.getElementById('ambient-canvas');const ctx=backgroundCanvas.getContext('2d');
@@ -707,10 +641,10 @@ function drawAmbient(){canvasAnimation=0;ctx.clearRect(0,0,innerWidth,innerHeigh
 function isFree(target){if(!target||target.closest('button,input,textarea,select,a,.card,.auth-form-card,.sidebar,.topbar,.hint-bar,.overlay'))return false;
  return !!target.closest('body,.auth-art,.workspace,.auth-scene,.page,.auth-copy');}
 let drawing=false;document.addEventListener('pointerdown',e=>{
- if(e.pointerType!=='mouse'||prefersReduced()||!isFree(e.target))return;drawing=true;gesture=[[e.clientX,e.clientY]];lastPointer=[e.clientX,e.clientY];
+ if(!state.ambientEnabled||e.pointerType!=='mouse'||prefersReduced()||!isFree(e.target))return;drawing=true;gesture=[[e.clientX,e.clientY]];lastPointer=[e.clientX,e.clientY];
 },{passive:true});
 document.addEventListener('pointermove',e=>{
- if(e.pointerType!=='mouse'||prefersReduced()||!isFree(e.target)){lastPointer=null;return;}
+ if(!state.ambientEnabled||e.pointerType!=='mouse'||prefersReduced()||!isFree(e.target)){lastPointer=null;return;}
  const p=[e.clientX,e.clientY];if(drawing)gesture.push(p);
  if(lastPointer&&Math.hypot(p[0]-lastPointer[0],p[1]-lastPointer[1])>1){
  const old=lastPointer,rgb=state.ambientTool==='pencil'?'95,114,65':'116,101,167';
@@ -720,22 +654,26 @@ document.addEventListener('pointermove',e=>{
  }
  lastPointer=p;
 },{passive:true});
-function triangleGesture(points){if(points.length<30)return false;
- const f=points[0],l=points.at(-1),minX=Math.min(...points.map(p=>p[0])),maxX=Math.max(...points.map(p=>p[0])),minY=Math.min(...points.map(p=>p[1])),maxY=Math.max(...points.map(p=>p[1]));
- const dx=maxX-minX,dy=maxY-minY;if(dx<65||dy<65||Math.hypot(f[0]-l[0],f[1]-l[1])>Math.max(dx,dy)*.26)return false;
- // Approximate triangle: three extremal corners and three line segments.
- let far=points.reduce((a,p)=>Math.hypot(p[0]-f[0],p[1]-f[1])>Math.hypot(a[0]-f[0],a[1]-f[1])?p:a,points[0]);
- let third=points.reduce((a,p)=>Math.abs((far[0]-f[0])*(p[1]-f[1])-(far[1]-f[1])*(p[0]-f[0]))>
- Math.abs((far[0]-f[0])*(a[1]-f[1])-(far[1]-f[1])*(a[0]-f[0]))?p:a,points[0]);
- const area=Math.abs((far[0]-f[0])*(third[1]-f[1])-(far[1]-f[1])*(third[0]-f[0]))/2;
- return area>dx*dy*.18;
+function triangleGesture(points){
+ if(points.length<20)return false;
+ const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+ const edgeDistance=(p,a,b)=>{const vx=b[0]-a[0],vy=b[1]-a[1],t=Math.max(0,Math.min(1,((p[0]-a[0])*vx+(p[1]-a[1])*vy)/(vx*vx+vy*vy||1)));return dist(p,[a[0]+t*vx,a[1]+t*vy]);};
+ const xs=points.map(p=>p[0]),ys=points.map(p=>p[1]),dx=Math.max(...xs)-Math.min(...xs),dy=Math.max(...ys)-Math.min(...ys),size=Math.max(dx,dy);
+ if(dx<65||dy<65||dist(points[0],points.at(-1))>size*.18)return false;
+ const a=points.reduce((v,p)=>p[0]<v[0]?p:v,points[0]);
+ const b=points.reduce((v,p)=>dist(p,a)>dist(v,a)?p:v,a);
+ const cross=p=>Math.abs((b[0]-a[0])*(p[1]-a[1])-(b[1]-a[1])*(p[0]-a[0]));
+ const c=points.reduce((v,p)=>cross(p)>cross(v)?p:v,a);
+ if(cross(c)<dx*dy*.5||Math.min(dist(a,b),dist(b,c),dist(c,a))<50)return false;
+ return points.every(p=>Math.min(edgeDistance(p,a,b),edgeDistance(p,b,c),edgeDistance(p,c,a))<=size*.065);
 }
+
 document.addEventListener('pointerup',e=>{if(!drawing)return;drawing=false;
  if(triangleGesture(gesture))toggleTool();gesture=[];lastPointer=null;},{passive:true});
 document.addEventListener('pointercancel',()=>{drawing=false;gesture=[];lastPointer=null},{passive:true});
 /* Dust in the crossword surface: separate from pencil strokes; no solid lines. */
 let dustFrame=0;
-function mountPowder(){let canvas=document.getElementById('powder');if(!canvas||prefersReduced())return;
+function mountPowder(){let canvas=document.getElementById('powder');if(!canvas||!state.ambientEnabled||prefersReduced())return;
  const parent=canvas.closest('.board');if(!parent)return;const context=canvas.getContext('2d'),rect=parent.getBoundingClientRect();
  canvas.width=Math.min(1200,Math.round(rect.width));canvas.height=Math.min(700,Math.round(rect.height));
  const particles=Array.from({length:50},()=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:0,vy:0}));

@@ -7,6 +7,8 @@ from fastapi import FastAPI,Request,HTTPException,Depends
 from fastapi.responses import HTMLResponse,JSONResponse,FileResponse,Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi.exceptions import RequestValidationError
 from .db import ROOT,connect,tx,one,allrows,utc,expire,audit,hash_pwd,verify_pwd,DUMMY_HASH,init_db
 from .logic import PERIOD,MAX_CREDITS,time_conflicts,grade_summary,period_average,cumulative_average,weighted,CUT_WEIGHTS
 from .services import settings,validate_sessions
@@ -20,9 +22,19 @@ app=FastAPI(title='CRUZA · Campus académico',version='3.0',lifespan=lifecycle)
 app.mount('/static',StaticFiles(directory=ROOT/'app'/'static'),name='static')
 templates=Jinja2Templates(directory=str(ROOT/'app'/'templates'))
 
-@app.exception_handler(HTTPException)
-async def errors(_,exc):
+@app.exception_handler(StarletteHTTPException)
+async def errors(request,exc):
+    if not request.url.path.startswith('/api/') and 'text/html' in request.headers.get('accept',''):
+        message='Esta página no existe. Vuelve al campus para elegir una sección.' if exc.status_code==404 else str(exc.detail)
+        return templates.TemplateResponse(request=request,name='error.html',context={'status':exc.status_code,'message':message},status_code=exc.status_code)
     return JSONResponse({'error':str(exc.detail)},status_code=exc.status_code)
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(_,exc):
+    return JSONResponse({'error':'La dirección o los datos no tienen el formato esperado. Revisa el formulario.'},status_code=422)
+
+@app.get('/api/health')
+def health():return {'application':'CRUZA','version':'3.1'}
 
 def fail(message,status=400):raise HTTPException(status,message)
 def valid_str(x,minlen=1,maxlen=120):

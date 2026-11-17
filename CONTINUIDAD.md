@@ -1,3 +1,6 @@
+## Actualización comprobada 17/11
+28/28 pruebas de servidor aprobadas. UI de edición conectada. Recorrido HTTP real en tests/recorrido_real.py en progreso: acceso, perfil, bloqueo por rol, matrícula con y sin choque, agenda y edición de pesos comprobados. Capturas parciales docs/evidencias. No declarar recorrido completo todavía. Se corrigieron también pistas invisibles y contraste. Launcher arrancar.py creado; falta verificar.
+
 # Continuidad CRUZA — 17 de noviembre de 2026
 
 ## Estado real

@@ -5,12 +5,15 @@
   <meta name="theme-color" content="#F5F3EA">
   <title>CRUZA · Campus académico interactivo</title>
   <link rel="stylesheet" href="/static/app.css?v=20261114_phase2">
-  <script defer src="/static/app.js?v=20261114_phase2"></script>
+  <link rel="stylesheet" href="/static/completion.css?v=20261117">
+  <script defer src="/static/features.js?v=20261117"></script>
+  <script defer src="/static/app.js?v=20261117"></script>
 </head>
 <body>
   <canvas id="ambient-canvas" aria-hidden="true"></canvas>
   <div id="app" aria-live="off"></div>
   <div id="toast-region" class="toast-region" role="status" aria-live="polite"></div>
+  <aside class="experience-tools" aria-label="Pistas y apariencia"><div id="hint" class="hint-bar">Pista: entra con tu usuario para conectar tu semestre.</div><div class="controls"><button data-action="theme" aria-label="Alternar modo día y noche">Día / noche</button><button data-action="tool" aria-label="Cambiar entre pincel y lápiz">Pincel / lápiz</button><button data-action="effects" aria-pressed="true">Efectos: sí</button></div></aside>
   <noscript><div class="noscript">CRUZA requiere JavaScript para navegar. Actívalo en tu navegador.</div></noscript>
 </body>
 </html>
