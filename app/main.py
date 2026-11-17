@@ -74,6 +74,10 @@ async def origin_guard(req,call_next):
 
 @app.get('/',response_class=HTMLResponse)
 def index(request:Request):return templates.TemplateResponse(request=request,name='index.html',context={'is_demo':DEMO})
+
+@app.get('/favicon.ico',include_in_schema=False)
+def favicon():
+    return FileResponse(ROOT/'app'/'static'/'favicon.svg',media_type='image/svg+xml')
 @app.get('/demo-anterior')
 def legacy():
     if not DEMO:fail('No disponible fuera del entorno de demostración.',404)
