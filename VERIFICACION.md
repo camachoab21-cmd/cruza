@@ -1,10 +1,10 @@
 # Verificación reproducible de CRUZA 3
 
-Fecha de revisión: 11 de noviembre de 2026.
+Última revisión: 17 de noviembre de 2026.\n\n**Actualización verificable:** el proyecto fue publicado en `main` de `camachoab21-cmd/cruza`, con 20 pruebas de backend aprobadas, 26 solicitudes en prueba de integración Chromium/API, favicon propio y pruebas GitHub Actions en verde. Las capturas están en `docs/capturas/` y el video en `docs/CRUZA3-VISITA-GUIADA.mp4`.
 
 ## Resultado de ejecución comprobado
 
-- `PYTHONPATH=. CRUZA_DEMO_MODE=1 pytest -q` — **19 pruebas pasadas** (cálculos, seguridad, bloqueo, recuperación, tres perfiles, matrícula, notas, asistencia y agenda).
+- `PYTHONPATH=. CRUZA_DEMO_MODE=1 pytest -q` — **20 pruebas pasadas** (cálculos, seguridad, bloqueo, recuperación, tres perfiles, matrícula, notas, asistencia y agenda).
 - `node --check app/static/app.js` y `python -m py_compile app/*.py` — sintaxis revisada.
 - `python tests/ui_smoke.py` — **4 recorridos visuales aislados** completados: estudiante escritorio (1440×900), docente escritorio, administrador escritorio y estudiante móvil (390×844). Sin errores JS capturados ni scroll horizontal extra en las pantallas visitadas.
 - Se generaron capturas en `docs/capturas/CRUZA3-*`. La grabación `docs/CRUZA3-RECORRIDO-VISUAL.mp4` corresponde a CRUZA 3 y demuestra la interfaz mediante transporte simulado; **no demuestra la conexión navegador-servidor real**. La grabación `docs/DEMOSTRACION-ANTERIOR.mp4` corresponde a la versión HTML anterior y se conserva como respaldo.
@@ -23,23 +23,26 @@ En este entorno, Chromium bloqueó navegar a `http://127.0.0.1:8765` y a archivo
 - Pruebas con zoom 200%, navegación con teclado, movimiento reducido y tamaños tablet.
 - Verificación de despliegue remoto si alguna vez se configura.
 
-## GitHub y colaboración
+## GitHub y colaboración (estado actualizado)
 
-El repositorio `camachoab21-cmd/cruza` mostraba al revisarlo únicamente un README de 7 bytes y un `index.html` de ~35 KB; último commit observado `ab240b92b49fd048e025af01c942859b28f2b202`. La conexión GitHub disponible tenía usuario `EdwingStivenMejiaSaenz-Campus` y permiso de **lectura, no escritura**. Por tanto, **estos nuevos archivos NO están publicados todavía**.
-
-Tampoco se pudo comprobar ni emitir una invitación a `ISFRANT` porque los permisos de administración GitHub no estaban disponibles. Es un paso pendiente.
+- **Publicado** en `camachoab21-cmd/cruza`, rama `main` desde la cuenta autorizada `camachoab21-cmd`.
+- El colaborador `ISFRANT` tiene permiso `write` comprobado a través de GitHub.
+- `tests/test_homepage.py` comprueba la página principal y los recursos estáticos; `tests/e2e_navegador_servidor.py` incluye CSS y JavaScript auténticos y envía las operaciones a una API FastAPI/SQLite real.
+- `.github/workflows/tests.yml` pasa en GitHub Actions (pruebas automáticas).
+- Capturas publicadas: `docs/capturas/login.jpg`, `estudiante.jpg`, `conflicto-matricula.jpg`, `administrador.jpg`. Video publicado: `docs/CRUZA3-VISITA-GUIADA.mp4`.
+- El backend no está alojado públicamente; GitHub Pages no lo ejecuta. Tampoco se afirma haber probado la aplicación directamente en Windows tras todos los cambios.
 
 ## No se afirma
 
 - Que el backend sea seguro para producción o cumpla auditorías externas.
 - Que el navegador real de Windows haya pasado todas las pruebas.
-- Que GitHub ya esté actualizado o GitHub Pages publique el servidor.
+- Que GitHub Pages aloje o ejecute el servidor FastAPI/SQLite (solo permite contenido estático).
 - Que exista servicio de email para la recuperación.
 
 
 ## Actualización final — ejecución adicional
 
-- `PYTHONPATH=. CRUZA_DEMO_MODE=1 pytest -q`: **19/19 tests aprobados**. Nueva prueba: rechaza créditos fraccionarios, flotantes y booleanos.
+- `PYTHONPATH=. CRUZA_DEMO_MODE=1 pytest -q`: **20/20 tests aprobados**. Nueva prueba: rechaza créditos fraccionarios, flotantes y booleanos.
 - `python tests/e2e_navegador_servidor.py`: **APROBADO**, 26 solicitudes reales procesadas por FastAPI/SQLite desde Chromium mediante puente de transporte; 0 errores JavaScript y 0 respuestas HTTP 5xx. La prueba incluye login de 3 perfiles, matrícula con conflicto, cambio de grupo, confirmación, agenda, nota, alta y aprobación administrativa y contraseña larga.
 - Recorridos manuales automatizados adicionales: estudiante con 10 secciones, guardado de notas y asistencia y visualización desde estudiante; alta de estudiante pendiente, rechazo de acceso y aprobación; móvil 390×844 sin desbordamiento horizontal, menú con Escape y pantalla Inscripción.
 - `node --check app/static/app.js` y `python -m py_compile app/*.py`: **sin errores de sintaxis**.
@@ -47,4 +50,3 @@ Tampoco se pudo comprobar ni emitir una invitación a `ISFRANT` porque los permi
 
 **Distinción importante:** el navegador controlado no pudo navegar directamente a `http://127.0.0.1` por una restricción del entorno. La integración usa el frontend real y una API HTTP real a través de un puente Python para las llamadas `fetch`, por lo que aún falta la prueba de acceso nativo en el equipo Windows del usuario. La visita guiada es una secuencia de capturas verificadas, no una grabación de clics en tiempo real.
 
-**GitHub sigue pendiente:** ninguna publicación ni invitación a `ISFRANT` fue confirmada con permiso de escritura.
