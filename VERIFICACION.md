@@ -1,6 +1,8 @@
 # Verificación reproducible de CRUZA 3
 
-Última revisión: 17 de noviembre de 2026.\n\n**Actualización verificable:** el proyecto fue publicado en `main` de `camachoab21-cmd/cruza`, con 20 pruebas de backend aprobadas, 26 solicitudes en prueba de integración Chromium/API, favicon propio y pruebas GitHub Actions en verde. Las capturas están en `docs/capturas/` y el video en `docs/CRUZA3-VISITA-GUIADA.mp4`.
+Última revisión: 17 de noviembre de 2026.
+
+**Actualización verificable:** el proyecto fue publicado en `main` de `camachoab21-cmd/cruza`, con 20 pruebas de backend aprobadas, 26 solicitudes en prueba de integración Chromium/API, favicon propio y pruebas GitHub Actions en verde. Las capturas están en `docs/capturas/` y el video en `docs/CRUZA3-VISITA-GUIADA.mp4`.
 
 ## Resultado de ejecución comprobado
 
