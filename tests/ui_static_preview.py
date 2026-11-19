@@ -41,12 +41,17 @@ with sync_playwright() as playwright:
         page.mouse.move(stage['x']+24,y)
         page.mouse.move(stage['x']+120,y-9,steps=20)
         page.wait_for_timeout(90)
-        paint=page.evaluate('window.__cruzaPencilCheck()')
-        assert paint['strokes']>0 and paint['grains']>0,paint
+        paint=page.evaluate('window.CruzaTools.debug()')
+        assert paint['segments']>0 and paint['particles']>0,paint
+        assert paint['insideMap'] and paint['width']>=65,paint
+        assert paint['pencilHidden'] is True
         page.locator('#preview-tool').click()
-        assert page.evaluate('window.__cruzaPencilCheck().mode')=='brush'
+        assert page.evaluate('window.CruzaTools.getMode()')=='crayon'
         page.locator('#preview-tool').click()
-        assert page.evaluate('window.__cruzaPencilCheck().mode')=='pencil'
+        assert page.evaluate('window.CruzaTools.getMode()')=='pencil'
+        page.mouse.move(3,3)
+        outside=page.evaluate('window.CruzaTools.debug()')
+        assert outside['width']<50 and outside['insideMap'] is False,outside
         # A shared crossword intersection must offer both routes on repeat clicks.
         crossing=board.locator('.board-tile[data-path*="|"]').first
         crossing.click()
@@ -64,4 +69,4 @@ with sync_playwright() as playwright:
             page.screenshot(path=str(OUTPUT/'cruza3-preview-movil.png'),full_page=True)
         page.close()
     browser.close()
-print('OK: demo pública CRUZA 3, crucigrama, rutas, colores y 4 resoluciones.')
+print('OK: vista pública, crayon/pencil, trazos, cursor grande/pequeño, 4 resoluciones.')
