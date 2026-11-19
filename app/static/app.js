@@ -260,7 +260,7 @@ function enrollment(){const d=state.data,selected=d.draft.selected;let courses=d
  <div class="row-left">${labelTag(c.category,tagCat(c.category))}${chosen?labelTag('En borrador','ok'):''}</div>
  ${gs.length?`<div class="field"><label for="grp-${c.id}">Grupo y horario asignado</label><select id="grp-${c.id}" data-course-id="${c.id}">
  ${gs.map(g=>`<option value="${g.id}" ${chosen?.id===g.id?'selected':''}>GRUPO ${g.code} · ${g.sessions.map(s=>`${s.day} ${s.start}-${s.end}`).join(' / ')}</option>`).join('')}</select></div>
- <div class="small muted">${escapeHtml(gs.map(g=>g.room).join(', '))}</div>
+ <div class="small muted">${escapeHtml([...new Set(gs.map(g=>g.room))].join(', '))}</div>
  <div class="actions">${chosen?btn('Retirar del borrador','toggle-course','btn-mini btn-danger',`data-course-id="${c.id}"`):
  btn('Añadir al borrador +','toggle-course','btn-lime btn-mini',`data-course-id="${c.id}"`)}</div>`:
  `<div class="notice">No se ofrecen grupos para esta materia durante 2026-2.</div>`}</article>`}).join('');
