@@ -23,7 +23,9 @@ jobs:
       - name: Probar API, roles y lógica académica
         run: python -m pytest -q
       - name: Comprobar sintaxis del frontend
-        run: node --check app/static/app.js
+        run: |
+          node --check app/static/app.js
+          node --check app/static/cruza-tools.js
       - name: Preparar navegador Chromium para revisar interfaz
         run: |
           python -m pip install playwright
@@ -36,7 +38,7 @@ jobs:
         run: python tests/ui_full_audit.py
       - name: Vista pública fiel a CRUZA 3
         run: python tests/ui_static_preview.py
-      - name: Comprobar gesto de lápiz y pincel
+      - name: Comprobar gesto de lápiz y crayón
         run: python tests/ui_gesture_audit.py
       - name: Guardar capturas e informes de auditoría
         if: always()
