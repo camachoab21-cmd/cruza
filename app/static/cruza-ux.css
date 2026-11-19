@@ -34,8 +34,8 @@ button,input,textarea,select{font-size:inherit}
 }
 .workspace:before{
  content:"";position:absolute;z-index:0;pointer-events:none;
- width:220px;height:220px;left:var(--glow-x,50%);top:var(--glow-y,30%);
- transform:translate(-50%,-50%);border-radius:50%;
+ width:220px;height:220px;left:0;top:0;
+ transform:translate3d(calc(var(--glow-px,200px) - 50%),calc(var(--glow-py,180px) - 50%),0);border-radius:50%;
  background:radial-gradient(circle,rgba(255,255,255,.56),rgba(171,243,190,.16) 38%,transparent 76%);
  opacity:.47;transition:opacity .2s;
 }
@@ -51,8 +51,8 @@ button,input,textarea,select{font-size:inherit}
  background-size:auto,auto,auto,32px 32px,32px 32px;
 }
 .auth-art:before{
- content:"";position:absolute;width:210px;height:210px;left:var(--glow-x,40%);top:var(--glow-y,50%);
- transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;
+ content:"";position:absolute;width:210px;height:210px;left:0;top:0;
+ transform:translate3d(calc(var(--glow-px,180px) - 50%),calc(var(--glow-py,220px) - 50%),0);border-radius:50%;pointer-events:none;
  background:radial-gradient(circle,rgba(255,249,217,.45),transparent 74%);
  opacity:.62;
 }
