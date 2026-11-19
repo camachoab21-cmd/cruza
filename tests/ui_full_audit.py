@@ -70,7 +70,14 @@ def audit():
       missingControls:[...document.querySelectorAll('#content button')].filter(x=>!((x.getAttribute('aria-label')||x.textContent||'').trim())).length,
       badInputLabels:[...document.querySelectorAll('#content input, #content select, #content textarea')].filter(x=>!x.labels?.length&&!x.getAttribute('aria-label')&&!x.getAttribute('title')).map(x=>x.id||x.outerHTML.slice(0,90)),
       emptyButtons:[...document.querySelectorAll('button')].filter(x=>!((x.getAttribute('aria-label')||x.textContent||'').trim())).map(x=>x.outerHTML.slice(0,120))}}''')
-     if data['scroll']>data['width']+3:issues.append({'type':'horizontal_overflow','role':role,'page':key,'width':width,'extra':data['scroll']-data['width']})
+     if data['scroll']>data['width']+3:
+      offenders=page.evaluate("""() => [...document.querySelectorAll('*')].filter(el=>{
+       const r=el.getBoundingClientRect();
+       return r.right>innerWidth+2 && r.width>0 && getComputedStyle(el).visibility!=='hidden';
+      }).slice(0,14).map(el=>({tag:el.tagName,cls:String(el.className||'').slice(0,75),
+         right:Math.round(el.getBoundingClientRect().right),width:Math.round(el.getBoundingClientRect().width)}))""")
+      issues.append({'type':'horizontal_overflow','role':role,'page':key,'width':width,
+                     'extra':data['scroll']-data['width'],'elements':offenders})
      if data['badInputLabels']:issues.append({'type':'input_labels','role':role,'page':key,'inputs':data['badInputLabels'][:10]})
      if data['emptyButtons']:issues.append({'type':'empty_buttons','role':role,'page':key,'buttons':data['emptyButtons'][:10]})
      if not data['subtitle']:issues.append({'type':'empty_page','role':role,'page':key})
