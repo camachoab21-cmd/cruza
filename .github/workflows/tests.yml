@@ -34,5 +34,14 @@ jobs:
         run: python tests/e2e_navegador_servidor.py
       - name: Auditar pantallas y dispositivos
         run: python tests/ui_full_audit.py
+      - name: Vista pública fiel a CRUZA 3
+        run: python tests/ui_static_preview.py
       - name: Comprobar gesto de lápiz y pincel
         run: python tests/ui_gesture_audit.py
+      - name: Guardar capturas e informes de auditoría
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cruza3-auditoria-visual
+          path: docs/auditoria/
+          if-no-files-found: warn
