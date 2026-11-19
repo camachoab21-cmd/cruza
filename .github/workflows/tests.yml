@@ -40,6 +40,8 @@ jobs:
         run: python tests/ui_static_preview.py
       - name: Comprobar gesto de lápiz y crayón
         run: python tests/ui_gesture_audit.py
+      - name: Prueba exhaustiva de acciones, formularios y recuperación
+        run: python tests/ui_actions_audit.py
       - name: Guardar capturas e informes de auditoría
         if: always()
         uses: actions/upload-artifact@v4
