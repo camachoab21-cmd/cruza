@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#fafbf3">
 <title>CRUZA 3 · Mapa interactivo · Vista visual</title>
 <link rel="icon" type="image/svg+xml" href="./app/static/favicon.svg">
-<link rel="stylesheet" href="./app/static/app.css?v=20261119_luminous">
+<link rel="stylesheet" href="./app/static/app.css?v=20261119_pencil">
 <style>
 body{overflow-x:hidden}
 .preview-shell{display:grid;grid-template-columns:230px minmax(0,1fr);min-height:100vh}
@@ -46,7 +46,7 @@ body{overflow-x:hidden}
 </style>
 </head>
 <body>
-<div class="preview-shell">
+<canvas id="preview-ink-canvas" aria-hidden="true"></canvas><div class="preview-shell">
 <aside class="preview-side">
  <div class="preview-brand">cruza<span>.</span><small class="brand-sub">CAMPUS ACADÉMICO</small></div>
  <div><div class="eyebrow">ESTUDIANTE / SECCIONES</div><nav id="preview-nav" aria-label="Explorar secciones del prototipo">
@@ -66,7 +66,7 @@ body{overflow-x:hidden}
 <main class="preview-main">
  <header class="preview-top">
   <div class="preview-tags"><strong>CRUZA 3 · CAMPUS ACADÉMICO</strong><span class="preview-flag">VISTA VISUAL</span></div>
-  <div class="preview-tags"><span class="preview-hint">PERÍODO DE EJEMPLO 2026-2</span><button id="preview-theme" aria-label="Alternar modo claro y oscuro" class="btn-mini" type="button">☀ / ☾</button></div>
+  <div class="preview-tags"><span class="preview-hint">PERÍODO DE EJEMPLO 2026-2</span><button id="preview-tool" aria-label="Alternar lápiz y pincel" class="btn-mini" type="button">✎ Lápiz</button><button id="preview-theme" aria-label="Alternar modo claro y oscuro" class="btn-mini" type="button">☀ / ☾</button></div>
  </header>
  <div class="preview-header">
   <div><div class="eyebrow">PISTA 01 · HORIZONTAL / CRUZA</div><h1>Tu semestre. <em>Todas las piezas.</em></h1>
@@ -74,7 +74,7 @@ body{overflow-x:hidden}
  </div>
  <section class="card board board-map" aria-label="Mapa interactivo de rutas académicas">
   <header class="map-head"><span class="map-kicker"><span class="map-dot" aria-hidden="true"></span> MAPA INTERACTIVO</span><span class="map-count">03 RUTAS / 01 SEMESTRE</span></header>
-  <div class="map-stage"><div id="preview-board" class="board-tiles" role="group" aria-label="Crucigrama de navegación"></div></div>
+  <div class="map-stage"><div id="preview-board" class="board-tiles" role="group" aria-label="Crucigrama de navegación"></div><div class="map-pencil" aria-hidden="true"><svg viewBox="0 0 94 136" xmlns="http://www.w3.org/2000/svg"><g transform="rotate(28 48 68)"><path d="M31 20 Q31 12 39 12 L57 12 Q64 12 64 20 L64 94 L48 126 L31 94 Z" fill="#f1a95e" stroke="#746b4b" stroke-width="2"/><path d="M39 12 L39 98 L48 126 L31 94 L31 20 Q31 12 39 12" fill="#f6d280"/><path d="M56 12 L56 98 L48 126 L64 94 L64 20 Q64 12 56 12" fill="#da9a62"/><path d="M31 92 L48 126 L64 92" fill="#e9cc9f" stroke="#92785b" stroke-width="2"/><path d="M43 116 L48 126 L53 116" fill="#343f37"/><rect x="31" y="12" width="33" height="15" rx="5" fill="#d8b5ef" stroke="#9980b2" stroke-width="2"/><path d="M31 29 H64" stroke="#ba915b" stroke-width="2"/></g></svg></div></div>
   <footer class="map-footer"><span>Explora una palabra para ver su ruta</span><span class="map-arrow" aria-hidden="true">↗</span></footer>
  </section>
  <section class="card preview-detail" aria-live="polite">
@@ -139,12 +139,18 @@ body{overflow-x:hidden}
   }
   const button=document.createElement("button");
   button.type="button";button.className="board-tile tone-"+cell.tone;
-  button.textContent=cell.letter;button.dataset.number=cell.number;
+  button.dataset.number=cell.number;
+  const face=document.createElement("span");face.className="tile-face";face.textContent=cell.letter;
+  if(cell.number){const num=document.createElement("span");num.className="tile-number";num.setAttribute("aria-hidden","true");num.textContent=cell.number;face.prepend(num);}
+  button.appendChild(face);
+  button.style.setProperty("--fall",String(19+(i*13)%23)+"px");
+  button.style.setProperty("--tilt",String((i*11)%15-7)+"deg");
+  button.style.setProperty("--scatter-x",String((i*17)%17-8)+"px");
   button.dataset.path=cell.routes.join("|");button.style.setProperty("--tile-i",String(i));
   button.setAttribute("aria-label","Letra "+cell.letter+"; "+cell.routes.join(" o "));
   button.addEventListener("pointerenter",function(){highlight(cell.routes[0]);});
   button.addEventListener("focus",function(){highlight(cell.routes[0]);});
-  button.addEventListener("click",function(){select(cell.routes[0]);});
+  button.addEventListener("click",function(){const last=button.dataset.lastRoute;const next=cell.routes[(Math.max(-1,cell.routes.indexOf(last))+1)%cell.routes.length];button.dataset.lastRoute=next;select(next);});
   host.appendChild(button);
  }
  function highlight(route){
