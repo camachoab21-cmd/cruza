@@ -60,7 +60,9 @@
       const filled=ell||index<value.length;
       const display=ell?'…':filled?(hidden?'●':value[index].toUpperCase()):'';
       const number=ell?'…':String(index+1);
-      const letter=tile.querySelector('.tile-letter'),num=tile.querySelector('.tile-num');
+      let letter=tile.querySelector('.tile-letter');
+      if(!letter){letter=document.createElement('span');letter.className='tile-letter';tile.appendChild(letter);}
+      const num=tile.querySelector('.tile-num');
       if(letter.textContent!==display)letter.textContent=display;
       if(num.textContent!==number)num.textContent=number;
       tile.classList.toggle('filled',filled);
