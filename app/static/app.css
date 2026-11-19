@@ -445,3 +445,6 @@ input:focus,textarea:focus,select:focus{border-color:#889c58}
  .board-map .board-tile[data-path].is-path .tile-face,.board-map .board-tile[data-path].is-floor .tile-face{transform:none!important;opacity:1!important}
  #preview-ink-canvas{display:none}
 }
+
+/* Keep the module choices legible when the preview is in night mode. */
+[data-theme=dark] .preview-actions button:not(.active){background:#314937!important;color:#f7ffe9!important;border-color:#85a17d!important}
