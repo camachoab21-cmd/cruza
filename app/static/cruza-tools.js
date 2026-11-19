@@ -42,12 +42,13 @@
   const canRun=()=>fine.matches&&!reduce.matches;
   const rgb=(c,a=1)=>'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')';
   function resize(){
-    const dpr=Math.min(devicePixelRatio||1,1.5);
+    const dpr=Math.min(devicePixelRatio||1,1.25);
     width=innerWidth;height=innerHeight;
     canvas.width=Math.max(1,Math.floor(width*dpr));
     canvas.height=Math.max(1,Math.floor(height*dpr));
     canvas.style.width=width+'px';canvas.style.height=height+'px';
     ctx.setTransform(dpr,0,0,dpr,0,0);
+    segments=[];dust=[];prior=null;
   }
   resize();addEventListener('resize',resize,{passive:true});
   function paletteAt(step){
@@ -88,65 +89,80 @@
     cursor.classList.remove('is-visible','is-large');
     boardChange(null);prior=null;
   }
+  let lastDraw=0;
   function render(now){
-    frame=0;ctx.clearRect(0,0,width,height);
-    segments=segments.filter(v=>now-v.t<3700);
-    dust=dust.filter(v=>now-v.t<2350);
+    frame=0;
+    if(document.hidden)return;
+    // 40 FPS máximos para el pigmento: el cursor del ratón se mueve independientemente.
+    if(now-lastDraw<25){frame=requestAnimationFrame(render);return;}
+    lastDraw=now;
+    ctx.clearRect(0,0,width,height);
+    segments=segments.filter(v=>now-v.t<3000);
+    dust=dust.filter(v=>now-v.t<1800);
+    ctx.lineCap='round';ctx.lineJoin='round';
     for(const s of segments){
-      const fade=Math.max(0,1-(now-s.t)/3700);
+      const fade=Math.max(0,1-(now-s.t)/3000);
+      if(fade<=0)continue;
+      const a=s.area;
+      const clipped=a.w<width-1||a.h<height-1;
       ctx.save();
-      ctx.beginPath();ctx.rect(s.area.x,s.area.y,s.area.w,s.area.h);ctx.clip();
-      ctx.lineCap='round';ctx.lineJoin='round';
-      const grad=ctx.createLinearGradient(s.x,s.y,s.xx||s.x+.01,s.yy||s.y+.01);
-      grad.addColorStop(0,rgb(s.start,.80*fade));
-      grad.addColorStop(1,rgb(s.end,.89*fade));
-      ctx.strokeStyle=grad;ctx.lineWidth=s.crayon?8.5:2.8;
-      ctx.shadowBlur=s.crayon?12:7;
-      ctx.shadowColor=rgb(s.end,.6*fade);
+      if(clipped){ctx.beginPath();ctx.rect(a.x,a.y,a.w,a.h);ctx.clip();}
+      ctx.globalAlpha=fade*(s.crayon?.85:.91);
+      ctx.strokeStyle=s.gradient;
+      ctx.lineWidth=s.crayon?8.5:2.8;
+      ctx.shadowBlur=s.crayon?5:3;
+      ctx.shadowColor=rgb(s.end,.38);
       ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.xx,s.yy);ctx.stroke();
       if(s.crayon){
-        ctx.shadowBlur=0;ctx.strokeStyle=rgb(s.start,.20*fade);ctx.lineWidth=13;
+        ctx.shadowBlur=0;
+        ctx.globalAlpha=fade*.17;
+        ctx.strokeStyle=rgb(s.start);
+        ctx.lineWidth=12;
         ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.xx,s.yy);ctx.stroke();
       }
       ctx.restore();
     }
+    // Las motas granuladas son ligeras: sin clip, filtros y save/restore por partícula.
+    ctx.shadowBlur=0;
     for(const p of dust){
-      const fade=Math.max(0,1-(now-p.t)/2350);
-      const delta=(now-p.t)*.013;
-      ctx.save();ctx.beginPath();ctx.rect(p.area.x,p.area.y,p.area.w,p.area.h);ctx.clip();
-      ctx.fillStyle=p.star?rgb([255,248,207],fade*.85):rgb(p.color,fade*.78);
-      ctx.shadowBlur=p.star?8:4;ctx.shadowColor=rgb(p.color,fade);
-      const x=p.x+p.vx*delta,y=p.y+p.vy*delta;
+      const fade=Math.max(0,1-(now-p.t)/1800);
+      const elapsed=(now-p.t)*.013;
+      const x=p.x+p.vx*elapsed,y=p.y+p.vy*elapsed,a=p.area;
+      if(x<a.x||x>a.x+a.w||y<a.y||y>a.y+a.h)continue;
+      ctx.fillStyle=p.star?rgb([255,248,207],fade*.8):rgb(p.color,fade*.72);
       if(p.star){
-        ctx.translate(x,y);ctx.rotate(p.angle);
-        ctx.beginPath();ctx.moveTo(0,-p.radius*2.2);ctx.lineTo(p.radius*.5,-p.radius*.5);
-        ctx.lineTo(p.radius*2.2,0);ctx.lineTo(p.radius*.5,p.radius*.5);
-        ctx.lineTo(0,p.radius*2.2);ctx.lineTo(-p.radius*.5,p.radius*.5);
-        ctx.lineTo(-p.radius*2.2,0);ctx.lineTo(-p.radius*.5,-p.radius*.5);ctx.closePath();ctx.fill();
-      }else{ctx.beginPath();ctx.arc(x,y,p.radius,0,Math.PI*2);ctx.fill();}
-      ctx.restore();
+        ctx.save();ctx.translate(x,y);ctx.rotate(p.angle);
+        const r=p.radius;
+        ctx.beginPath();ctx.moveTo(0,-r*2);ctx.lineTo(r*.6,0);
+        ctx.lineTo(0,r*2);ctx.lineTo(-r*.6,0);ctx.closePath();ctx.fill();
+        ctx.restore();
+      }else{
+        ctx.beginPath();ctx.arc(x,y,p.radius,0,Math.PI*2);ctx.fill();
+      }
     }
     if((segments.length||dust.length)&&!document.hidden)frame=requestAnimationFrame(render);
   }
   function paint(x,y,area){
     const now=performance.now();
-    if(!prior||now-prior.t>170){prior={x,y,t:now};return;}
+    if(!prior||now-prior.t>245){prior={x,y,t:now};return;}
     const dist=Math.hypot(x-prior.x,y-prior.y);
-    if(dist<2||dist>110){prior={x,y,t:now};return;}
+    if(dist<1.5||dist>240){prior={x,y,t:now};return;}
     walk+=dist;
     const start=paletteAt(walk/77),end=paletteAt((walk+dist)/77+.22);
+    const gradient=ctx.createLinearGradient(prior.x,prior.y,x||prior.x+.01,y||prior.y+.01);
+    gradient.addColorStop(0,rgb(start));gradient.addColorStop(1,rgb(end));
     const crayon=mode==='crayon';
-    segments.push({x:prior.x,y:prior.y,xx:x,yy:y,start,end,t:now,crayon,area});
-    if(segments.length>190)segments.splice(0,segments.length-190);
-    const count=crayon?10:5;
+    segments.push({x:prior.x,y:prior.y,xx:x,yy:y,start,end,gradient,t:now,crayon,area});
+    if(segments.length>95)segments.splice(0,segments.length-95);
+    const count=crayon?7:4;
     for(let i=0;i<count;i++){
-      const color=paletteAt((walk+i*9)/77);
+      const color=paletteAt((walk+i*10)/77);
       dust.push({x:x+(Math.random()-.5)*15,y:y+(Math.random()-.5)*15,
         vx:(Math.random()-.5)*2.4,vy:(Math.random()-.5)*2.4,
         radius:.5+Math.random()*(crayon?2.2:1.45),t:now,color,area,
-        star:Math.random()<(crayon?.19:.10),angle:Math.random()*6.28});
+        star:Math.random()<(crayon?.15:.08),angle:Math.random()*6.28});
     }
-    if(dust.length>550)dust.splice(0,dust.length-550);
+    if(dust.length>220)dust.splice(0,dust.length-220);
     prior={x,y,t:now};
     if(!frame)frame=requestAnimationFrame(render);
   }
