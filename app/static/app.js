@@ -189,28 +189,29 @@ document.addEventListener('focusout',e=>{
 });
 
 function crossword(){const grid=new Map(),words=[
- {name:'MATRICULA',row:4,col:0,vertical:false,route:'inscripcion'},
- {name:'HORARIO',row:1,col:1,vertical:true,route:'horario'},
- {name:'NOTAS',row:2,col:0,vertical:false,route:'notas'},
- {name:'PENSUM',row:0,col:6,vertical:true,route:'pensum'}];
+ {name:'MATRICULA',row:2,col:0,vertical:false,route:'inscripcion',number:1,tone:'lime'},
+  {name:'HORARIO',row:0,col:3,vertical:true,route:'horario',number:2,tone:'lavender'},
+  {name:'NOTAS',row:6,col:2,vertical:false,route:'notas',number:3,tone:'peach'},
+  {name:'CRUZA',row:4,col:2,vertical:false,route:'tablero',number:4,tone:'cream'}];
  for(const w of words)for(let i=0;i<w.name.length;i++){
    const row=w.row+(w.vertical?i:0),col=w.col+(w.vertical?0:i),key=`${row}-${col}`;
-   let cell=grid.get(key)||{letter:w.name[i],routes:[]};cell.routes.push(w.route);grid.set(key,cell)}
- return `<section class="card board canvas-grid"><div><div class="eyebrow">CRUCIGRAMA / RUTAS ACADÉMICAS</div>
- <h2>Todo <em>conecta.</em></h2><p class="small muted">Selecciona una palabra para revelar su módulo. En las intersecciones puedes elegir el camino.</p>
+   let cell=grid.get(key)||{letter:w.name[i],routes:[],number:i===0?w.number:null,tone:w.tone};
+    if(cell.letter!==w.name[i])throw Error('Intersección incorrecta: '+key);
+    cell.routes.push(w.route);if(w.vertical)cell.tone='lavender';grid.set(key,cell)}
+ return `<section class="card board board-map" aria-label="Mapa interactivo de rutas académicas"><header class="map-head"><span class="map-kicker"><span class="map-dot" aria-hidden="true"></span> MAPA INTERACTIVO</span><span class="map-count">03 RUTAS / 01 SEMESTRE</span></header><div class="map-stage">
  <div class="board-tiles" role="group" aria-label="Crucigrama de navegación">
- ${Array.from({length:81},(_,i)=>{const r=Math.floor(i/9),c=i%9,cell=grid.get(`${r}-${c}`);
-  return cell?`<button type="button" class="board-tile" style="--tile-i:${i}" data-action="word" data-path="${cell.routes.join('|')}" data-hint="Casilla ${cell.letter}: ${cell.routes.join(', ')}" aria-label="Letra ${cell.letter}; ${cell.routes.join(' o ')}">${cell.letter}</button>`:'<span class="board-tile void" aria-hidden="true"></span>'}).join('')}</div></div>
- <div class="board-clues"><span class="eyebrow">PALABRAS</span>${words.map((w,i)=>linkRoute(`${String(i+1).padStart(2,'0')} ${w.name}`,w.route,'btn-mini')).join('')}</div><canvas id="powder" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0"></canvas></section>`}
+ ${Array.from({length:63},(_,i)=>{const r=Math.floor(i/9),c=i%9,cell=grid.get(`${r}-${c}`);
+  return cell?`<button type="button" class="board-tile tone-${cell.tone}" data-number="${cell.number??''}" style="--tile-i:${i}" data-action="word" data-path="${cell.routes.join('|')}" data-hint="Casilla ${cell.letter}: ${cell.routes.join(', ')}" aria-label="Letra ${cell.letter}; ${cell.routes.join(' o ')}">${cell.letter}</button>`:'<span class="board-tile void" aria-hidden="true"></span>'}).join('')}</div></div>
+ <footer class="map-footer"><span>Explora una palabra para ver su ruta</span><span class="map-arrow" aria-hidden="true">↗</span></footer><canvas id="powder" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0"></canvas></section>`}
 function dashboard(){const d=state.data;const courses=d.draft.confirmed;const next=courses[0];
  return head('01 · HORIZONTAL','Tu semestre. <em>Todas las piezas.</em>',`Hola, ${escapeHtml(state.user.full_name)}. Cada palabra te guía al siguiente paso en el tablero.`,linkRoute('Inscribir materias ↗','inscripcion','btn-primary'))+
- `<div class="grid-2"><div>${crossword()}</div><section class="card">
+ `${crossword()}<section class="card dashboard-status">
  <div class="eyebrow">ESTADO ACTUAL</div><h2>Una palabra a la vez.</h2>
  <p class="muted">Las conexiones también se construyen con pequeños avances.</p>
  <div class="list"><div class="item"><strong>Próxima clase</strong><span>${next?escapeHtml(next.name):'Sin materias'}</span></div>
  <div class="item"><strong>Materias vigentes</strong><span>${courses.length}</span></div>
  <div class="item"><strong>Agenda</strong><span>${d.agenda.filter(x=>!x.done).length} pendientes</span></div></div>
- <div class="actions">${linkRoute('Abrir horario ↗','horario','btn-lime')}${linkRoute('Ver agenda','agenda')}</div></section></div>
+ <div class="actions">${linkRoute('Abrir horario ↗','horario','btn-lime')}${linkRoute('Ver agenda','agenda')}</div></section>
  <div class="stats">${stat('CRÉDITOS INSCRITOS',d.summary.credits_current,'Créditos enteros')}
  ${stat('PROMEDIO ACUMULADO',number(d.summary.papa),'Promedio ponderado acumulado','purple')}
  ${stat('PROMEDIO DEL PERÍODO',number(d.summary.papi),'Solo notas definitivas disponibles','peach')}</div>`;
