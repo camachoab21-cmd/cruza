@@ -406,3 +406,42 @@ input:focus,textarea:focus,select:focus{border-color:#889c58}
  filter:blur(1.8px);opacity:.75;pointer-events:none
 }
 @media(max-width:700px){.map-stage:after{width:90px;height:25px;bottom:15px;opacity:.35}}
+
+/* Ruta original: la animación de entrada ya no bloquea las transformaciones. */
+.board-map .board-tile{animation-fill-mode:backwards!important;transform:none!important;box-shadow:none}
+.board-map .board-tile[data-path]:hover,.board-map .board-tile[data-path].is-path,
+.board-map .board-tile[data-path].is-floor{transform:none!important;box-shadow:none}
+.board-map .board-tile[data-number]:before{display:none}
+.board-map .tile-face{
+ position:absolute;inset:0;display:grid;place-items:center;font:inherit;color:inherit;
+ background:inherit;border:1px solid currentColor;border-color:inherit;border-radius:5px;
+ box-shadow:0 4px 0 rgba(82,107,72,.32),inset 0 1px rgba(255,255,255,.65);
+ pointer-events:none;opacity:1;transform:translate3d(0,0,0);
+ transition:transform .38s cubic-bezier(.2,.7,.18,1),opacity .3s ease,background .28s ease,box-shadow .3s ease;
+}
+.board-map .tile-number{position:absolute;top:3px;left:3px;font:700 .53rem Consolas,monospace;color:#40503b}
+.board-map .board-tile[data-path]:hover .tile-face,
+.board-map .board-tile[data-path].is-path .tile-face{
+ background:#e7ffa8;transform:translate3d(0,-10px,0) rotateX(-9deg);
+ box-shadow:0 9px 0 #96b36c,0 13px 17px rgba(64,96,51,.27)
+}
+.board-map .board-tile[data-path].is-floor .tile-face{
+ transform:translate3d(var(--scatter-x,4px),var(--fall,23px),0) rotate(var(--tilt,4deg)) scale(.81);
+ opacity:.18;box-shadow:0 2px 0 #8198775e
+}
+.board-map .board-tile[data-path].is-path{z-index:5}
+.board-map .board-tile[data-path].is-floor{z-index:1}
+.map-pencil{position:absolute;z-index:2;left:7%;bottom:3%;width:96px;height:122px;pointer-events:none;
+ transform-origin:70% 86%;animation:pencil-float 4s ease-in-out infinite;
+ filter:drop-shadow(0 12px 9px rgba(68,83,61,.16))}
+.map-pencil svg{display:block;width:100%;height:100%;max-width:100%}
+@keyframes pencil-float{0%,100%{transform:translate3d(0,0,0) rotate(-7deg)}50%{transform:translate3d(9px,-8px,0) rotate(3deg)}}
+#preview-ink-canvas{position:fixed;inset:0;z-index:2;pointer-events:none;width:100%;height:100%;opacity:.90}
+.preview-shell{position:relative;z-index:1}
+@media(max-width:700px){.map-pencil{width:54px;height:69px;left:5%;bottom:8%;opacity:.75}}
+@media(prefers-reduced-motion:reduce){
+ .map-pencil{animation:none}
+ .board-map .tile-face{transition:none!important}
+ .board-map .board-tile[data-path].is-path .tile-face,.board-map .board-tile[data-path].is-floor .tile-face{transform:none!important;opacity:1!important}
+ #preview-ink-canvas{display:none}
+}
