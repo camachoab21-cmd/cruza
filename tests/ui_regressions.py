@@ -1,3 +1,4 @@
+from cruza_assets import inline_tools
 """Regresiones visuales críticas de CRUZA para la exposición.
 
 No toca la base de datos; inspecciona CSS y JavaScript reales en Chromium.
@@ -7,7 +8,7 @@ import re
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-html = (ROOT / 'app/templates/index.html').read_text(encoding='utf8')
+html = inline_tools((ROOT / 'app/templates/index.html').read_text(encoding='utf8'),ROOT)
 css = (ROOT / 'app/static/app.css').read_text(encoding='utf8')
 javascript = (ROOT / 'app/static/app.js').read_text(encoding='utf8')
 html, css_count = re.subn(r'<link\s+rel="stylesheet"\s+href="/static/app\.css[^"]*"\s*/?>', lambda _: '<style>' + css + '</style>', html)

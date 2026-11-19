@@ -1,3 +1,4 @@
+from cruza_assets import inline_tools
 """Prueba de integración: Chromium y frontend auténticos contra FastAPI/SQLite.
 
 Puente HTTP: Chromium del entorno controlado no puede abrir localhost;
@@ -28,7 +29,7 @@ def main():
      if urllib.request.urlopen(base+'/api/session',timeout=.5).status==200:break
     except Exception:time.sleep(.1)
    else:raise RuntimeError('El servidor de prueba no inició.')
-   html=(ROOT/'app/templates/index.html').read_text(encoding='utf8')
+   html=inline_tools((ROOT/'app/templates/index.html').read_text(encoding='utf8'),ROOT)
    # El HTML usa cache-busting (?v=...), por eso no basta una sustitución literal.
    css=(ROOT/'app/static/app.css').read_text(encoding='utf8')
    html,n_css=re.subn(r'<link\s+rel="stylesheet"\s+href="/static/app\.css[^"]*"\s*/?>',lambda _: '<style>'+css+'</style>',html,count=1)

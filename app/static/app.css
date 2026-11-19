@@ -448,3 +448,15 @@ input:focus,textarea:focus,select:focus{border-color:#889c58}
 
 /* Keep the module choices legible when the preview is in night mode. */
 [data-theme=dark] .preview-actions button:not(.active){background:#314937!important;color:#f7ffe9!important;border-color:#85a17d!important}
+
+/* Notas en pantallas de 360 px: ajustar las tres columnas sin recortar textos. */
+@media(max-width:600px){
+ .courses{grid-template-columns:minmax(0,1fr)}
+ .course-grades-card{min-width:0;max-width:100%;padding:14px}
+ .corte-tiles{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ .corte-cell{min-width:0;padding:8px 6px;overflow-wrap:anywhere}
+ .corte-header{flex-wrap:wrap;gap:2px 4px}
+ .corte-pct{padding:1px 3px}
+ .course-grades-head{min-width:0;gap:8px}
+ .course-grades-head>div{min-width:0;overflow-wrap:anywhere}
+}

@@ -41,12 +41,29 @@ with sync_playwright() as playwright:
         page.mouse.move(stage['x']+24,y)
         page.mouse.move(stage['x']+120,y-9,steps=20)
         page.wait_for_timeout(90)
-        paint=page.evaluate('window.__cruzaPencilCheck()')
-        assert paint['strokes']>0 and paint['grains']>0,paint
+        paint=page.evaluate('window.CruzaTools.debug()')
+        assert paint['segments']>0 and paint['particles']>0,paint
+        assert paint['insideMap'] and paint['width']>=65,paint
+        assert paint['pencilHidden'] is True
+        assert len(set(tuple(rgb) for rgb in paint['colors']))>1, 'El trazo sigue siendo de un solo color'
+        tip=page.evaluate("""() => {
+          const c=document.getElementById('cruza-art-cursor'),r=c.getBoundingClientRect(),p=CruzaTools.debug();
+          return {dx:Math.abs(r.left+r.width/2-p.x),dy:Math.abs(r.top+r.height*.95-p.y)}
+        }""")
+        assert tip['dx']<2 and tip['dy']<2,tip
         page.locator('#preview-tool').click()
-        assert page.evaluate('window.__cruzaPencilCheck().mode')=='brush'
+        assert page.evaluate('window.CruzaTools.getMode()')=='crayon'
+        page.mouse.move(stage['x']+24,y)
+        page.mouse.move(stage['x']+122,y-11,steps=25)
+        if width==1440:
+            page.wait_for_timeout(110)
+            page.screenshot(path=str(OUTPUT/'cruza3-crayon-en-uso.png'),full_page=True)
         page.locator('#preview-tool').click()
-        assert page.evaluate('window.__cruzaPencilCheck().mode')=='pencil'
+        assert page.evaluate('window.CruzaTools.getMode()')=='pencil'
+        page.mouse.move(3,3)
+        page.wait_for_timeout(350)  # Espera a que termine la transición de escala de 240 ms
+        outside=page.evaluate('window.CruzaTools.debug()')
+        assert outside['width']<50 and outside['insideMap'] is False,outside
         # A shared crossword intersection must offer both routes on repeat clicks.
         crossing=board.locator('.board-tile[data-path*="|"]').first
         crossing.click()
@@ -63,5 +80,11 @@ with sync_playwright() as playwright:
         if width==390:
             page.screenshot(path=str(OUTPUT/'cruza3-preview-movil.png'),full_page=True)
         page.close()
+    reduced=browser.new_page(viewport={'width':1440,'height':900},reduced_motion='reduce')
+    reduced.goto(uri,wait_until='load')
+    rect=reduced.locator('.map-stage').bounding_box()
+    reduced.mouse.move(rect['x']+28,rect['y']+rect['height']-45)
+    assert reduced.evaluate('window.CruzaTools.debug().visible') is False
+    reduced.close()
     browser.close()
-print('OK: demo pública CRUZA 3, crucigrama, rutas, colores y 4 resoluciones.')
+print('OK: vista pública, pigmento multicolor, puntero alineado, crayón/lápiz, accesibilidad y móvil.')
