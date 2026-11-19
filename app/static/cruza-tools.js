@@ -95,6 +95,7 @@
     for(const s of segments){
       const fade=Math.max(0,1-(now-s.t)/3700);
       ctx.save();
+      ctx.beginPath();ctx.rect(s.area.x,s.area.y,s.area.w,s.area.h);ctx.clip();
       ctx.lineCap='round';ctx.lineJoin='round';
       const grad=ctx.createLinearGradient(s.x,s.y,s.xx||s.x+.01,s.yy||s.y+.01);
       grad.addColorStop(0,rgb(s.start,.80*fade));
@@ -112,7 +113,8 @@
     for(const p of dust){
       const fade=Math.max(0,1-(now-p.t)/2350);
       const delta=(now-p.t)*.013;
-      ctx.save();ctx.fillStyle=p.star?rgb([255,248,207],fade*.85):rgb(p.color,fade*.78);
+      ctx.save();ctx.beginPath();ctx.rect(p.area.x,p.area.y,p.area.w,p.area.h);ctx.clip();
+      ctx.fillStyle=p.star?rgb([255,248,207],fade*.85):rgb(p.color,fade*.78);
       ctx.shadowBlur=p.star?8:4;ctx.shadowColor=rgb(p.color,fade);
       const x=p.x+p.vx*delta,y=p.y+p.vy*delta;
       if(p.star){
@@ -126,7 +128,7 @@
     }
     if((segments.length||dust.length)&&!document.hidden)frame=requestAnimationFrame(render);
   }
-  function paint(x,y){
+  function paint(x,y,area){
     const now=performance.now();
     if(!prior||now-prior.t>170){prior={x,y,t:now};return;}
     const dist=Math.hypot(x-prior.x,y-prior.y);
@@ -134,14 +136,14 @@
     walk+=dist;
     const start=paletteAt(walk/77),end=paletteAt((walk+dist)/77+.22);
     const crayon=mode==='crayon';
-    segments.push({x:prior.x,y:prior.y,xx:x,yy:y,start,end,t:now,crayon});
+    segments.push({x:prior.x,y:prior.y,xx:x,yy:y,start,end,t:now,crayon,area});
     if(segments.length>190)segments.splice(0,segments.length-190);
     const count=crayon?10:5;
     for(let i=0;i<count;i++){
       const color=paletteAt((walk+i*9)/77);
       dust.push({x:x+(Math.random()-.5)*15,y:y+(Math.random()-.5)*15,
         vx:(Math.random()-.5)*2.4,vy:(Math.random()-.5)*2.4,
-        radius:.5+Math.random()*(crayon?2.2:1.45),t:now,color,
+        radius:.5+Math.random()*(crayon?2.2:1.45),t:now,color,area,
         star:Math.random()<(crayon?.19:.10),angle:Math.random()*6.28});
     }
     if(dust.length>550)dust.splice(0,dust.length-550);
@@ -164,8 +166,14 @@
       const rect=board.getBoundingClientRect();
       board.style.setProperty('--cruza-x',((e.clientX-rect.left)/rect.width*100).toFixed(1)+'%');
       board.style.setProperty('--cruza-y',((e.clientY-rect.top)/rect.height*100).toFixed(1)+'%');
-      if(!e.target.closest('button,a,input,textarea,select'))paint(e.clientX,e.clientY);
-      else prior=null;
+      const stage=e.target.closest('.map-stage');
+      if(stage&&!e.target.closest('button,a,input,textarea,select')){
+        const b=stage.getBoundingClientRect(),padding=10;
+        const area={x:b.left+padding,y:b.top+padding,w:b.width-padding*2,h:b.height-padding*2};
+        if(e.clientX>=area.x&&e.clientX<=area.x+area.w&&e.clientY>=area.y&&e.clientY<=area.y+area.h){
+          paint(e.clientX,e.clientY,area);
+        }else prior=null;
+      }else prior=null;
     }else prior=null;
   }
   document.addEventListener('pointermove',onPointer,{passive:true});
@@ -179,7 +187,8 @@
     setMode,toggle,getMode:()=>mode,
     debug:()=>({mode,visible,insideMap:boardActive,width:cursor.getBoundingClientRect().width,
       segments:segments.length,particles:dust.length,x:lastPosition.x,y:lastPosition.y,
-      pencilHidden:!!activeBoard?.classList.contains('cruza-map-has-cursor')})
+      pencilHidden:!!activeBoard?.classList.contains('cruza-map-has-cursor'),
+      colors:segments.slice(-5).map(seg=>seg.start)})
   };
   setMode('pencil');
 })();
