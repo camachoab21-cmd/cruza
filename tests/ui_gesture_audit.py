@@ -18,6 +18,26 @@ with sync_playwright() as pw:
  errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  page.set_content(html);page.wait_for_selector('#auth-user')
  assert page.evaluate('state.ambientTool')=='pencil'
+ # El fondo libre del acceso debe generar trazos con el componente compartido.
+ # Buscar una franja vacía real, evitando textos, botones y casillas.
+ free=page.evaluate("""() => {
+   const art=document.querySelector('.auth-art');const r=art.getBoundingClientRect();
+   for(let y=r.top+35;y<r.bottom-35;y+=22){
+     for(let x=r.left+24;x<r.right-130;x+=22){
+       const a=document.elementFromPoint(x,y),b=document.elementFromPoint(x+70,y);
+       if(a?.matches('.auth-art,.auth-scene,.auth-stars,.auth-star,.canvas-grid') &&
+          b?.matches('.auth-art,.auth-scene,.auth-stars,.auth-star,.canvas-grid'))
+         return {x,y};
+     }
+   }
+   return null;
+ }""")
+ assert free,'No se encontró una superficie libre en el arte del login'
+ page.mouse.move(free['x'],free['y'])
+ page.mouse.move(free['x']+70,free['y'],steps=18)
+ ink=page.evaluate('window.CruzaTools.debug()')
+ assert ink['segments']>0 and ink['particles']>0,ink
+ assert ink['insideMap'] is False and ink['width']<50,ink
  path=[(140+i*8,470) for i in range(21)]+[(300-i*4,470-i*8) for i in range(21)]+[(220-i*4,310+i*8) for i in range(21)]
  # exact last point should equal the first within tolerance
  path[-1]=(140,470)
