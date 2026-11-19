@@ -118,7 +118,7 @@ async function reloadData(){if(!state.user){renderLogin();return;}
  state.data=await api(state.user.role==='student'?'/student':state.user.role==='teacher'?'/teacher':'/admin');render();}
 function sideBar(){const menu=roleMenu[state.user.role];return `<aside class="sidebar" id="sidebar">${brand()}<div>
  <div class="eyebrow" style="margin:0 0 14px">${escapeHtml(roleNames[state.user.role])} / SECCIONES</div><nav aria-label="Secciones del campus">
- ${menu.map(([key,text],i)=>`<button class="navbtn ${state.page===key?'active':''}" data-action="route" data-route="${key}" aria-current="${state.page===key?'page':'false'}">
+ ${menu.map(([key,text],i)=>`<button class="navbtn ${state.page===key?'active':''}" data-action="route" data-route="${key}" aria-label="${escapeHtml(text)}" aria-current="${state.page===key?'page':'false'}">
  <span class="mon">${String(i+1).padStart(2,'0')}</span><span>${text}</span></button>`).join('')}</nav></div>
  <div class="sidebar-foot"><div class="eyebrow">TU IDENTIDAD</div><strong>${escapeHtml(state.user.full_name)}</strong>
  <div class="tiny muted">${escapeHtml(state.user.username)}</div>
