@@ -181,7 +181,7 @@ def main():
     click('[data-action="recover"]','request account recovery');modal_labels()
     page.locator('#recover-user').fill('FUSIONTEST')
     click('#request-recovery-form button[type="submit"]','submit recovery')
-    page.wait_for_selector('#dialog-title');assert page.get_by_text('Solicitud registrada').is_visible()
+    page.get_by_text('Solicitud registrada').wait_for(state='visible',timeout=15000)
     click('[data-action="modal-close"]','close recovery')
     login('ADMIN','ADMIN2026');route('recuperacion')
     req=page.evaluate('state.data.recovery.find(x=>x.username==="FUSIONTEST")')
