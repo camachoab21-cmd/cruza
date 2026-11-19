@@ -1,3 +1,4 @@
+from cruza_assets import inline_tools
 """Auditoría E2E: visual por rol/pantalla, controles, estado y API real aislada."""
 from pathlib import Path
 import os,sys,shutil,socket,tempfile,subprocess,time,urllib.request,urllib.error,http.cookiejar,re,json
@@ -19,7 +20,7 @@ def audit():
      if urllib.request.urlopen(base+'/api/session',timeout=.5).status==200:break
     except Exception:time.sleep(.1)
    else:raise RuntimeError('Servidor no arrancó')
-   html=(ROOT/'app/templates/index.html').read_text('utf8')
+   html=inline_tools((ROOT/'app/templates/index.html').read_text('utf8'),ROOT)
    css=(ROOT/'app/static/app.css').read_text('utf8')
    html,n1=re.subn(r'<link\s+rel="stylesheet"\s+href="/static/app\.css[^"]*"\s*/?>',lambda m:'<style>'+css+'</style>',html)
    html,n2=re.subn(r'<script\s+defer\s+src="/static/app\.js[^"]*"\s*>\s*</script>','',html)
