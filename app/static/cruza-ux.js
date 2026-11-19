@@ -202,8 +202,8 @@
       glowFrame=0;
       if(!glowTarget||!glowTarget.isConnected)return;
       const rect=glowTarget.getBoundingClientRect();
-      glowTarget.style.setProperty('--glow-x',((glowX-rect.left)/rect.width*100).toFixed(1)+'%');
-      glowTarget.style.setProperty('--glow-y',((glowY-rect.top)/rect.height*100).toFixed(1)+'%');
+      glowTarget.style.setProperty('--glow-px',(glowX-rect.left).toFixed(1)+'px');
+      glowTarget.style.setProperty('--glow-py',(glowY-rect.top).toFixed(1)+'px');
     });
   },{passive:true});
   window.CruzaUX={fontScale,refreshTiles,debug:()=>({scale:Number(html.dataset.fontScale||1),help:document.getElementById('hint')?.textContent||'',menuOpen:!document.querySelector('[data-font-menu]')?.hidden})};
