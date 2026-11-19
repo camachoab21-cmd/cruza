@@ -29,7 +29,7 @@ jobs:
       - name: Preparar navegador Chromium para revisar interfaz
         run: |
           python -m pip install playwright
-          python -m playwright install --with-deps chromium
+          python -m playwright install chromium
       - name: Regresiones visuales de acceso, crucigrama y filtros
         run: python tests/ui_regressions.py
       - name: Recorrido navegador con FastAPI y SQLite aislados
