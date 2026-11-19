@@ -253,3 +253,19 @@ input:focus,textarea:focus,select:focus{border-color:#889c58}
 
 /* Keep the paper-grid metaphor subtle, particularly at night. */
 .canvas-grid{background-image:linear-gradient(color-mix(in srgb,var(--line) 32%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--line) 32%,transparent) 1px,transparent 1px)}
+/* Respect native hiding when the course card is a flex container. */
+.course-card[hidden]{display:none!important}
+/* Original crossword effect: active route lifts, other pieces gently settle. */
+.board-tiles .board-tile[data-path].is-path{
+  position:relative;z-index:3;background:var(--lime);
+  transform:translate3d(0,-9px,0) rotateX(-12deg) scale(1.06);
+  box-shadow:0 10px 18px #263a2a33,inset 0 -3px #5c7d3d55;
+}
+.board-tiles .board-tile[data-path].is-floor{
+  transform:translate3d(0,6px,0) rotateX(9deg) scale(.97);opacity:.62;
+}
+.board-clues [data-route].is-path{background:var(--lime);color:#25321c;border-color:#799451}
+.board-tiles .board-tile[data-path]:focus-visible{outline:3px solid var(--purple);outline-offset:2px;z-index:4}
+@media(prefers-reduced-motion:reduce){
+ .board-tiles .board-tile.is-path,.board-tiles .board-tile.is-floor{transform:none!important}
+}

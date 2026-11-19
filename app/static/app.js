@@ -81,7 +81,7 @@ function tileRefresh(id){
  if(!input||!tileRoot)return;
  const text=input.value,limit=14,overflow=text.length>=limit;
  const start=overflow?text.length-(limit-1):0;
- const count=overflow?limit:Math.max(7,Math.min(limit,text.length+1));
+ const count=overflow?limit:Math.max(1,Math.min(limit,text.length));
  const focused=document.activeElement===input,caret=input.selectionStart??text.length;
  const secret=id==='auth-pass'&&input.type==='password';
  let html='';
@@ -160,6 +160,34 @@ const hints={tablero:'Tablero: cada palabra es una ruta de tu vida académica.',
  estudiantes:'Estudiantes: el administrador crea, aprueba y desactiva cuentas.',recuperacion:'Recuperación: restablecer no desbloquea una cuenta automáticamente.',
  catalogo:'Catálogo: cada materia define créditos enteros y sus grupos ofrecidos.',auditoria:'Auditoría: registro de cambios importantes en la aplicación.'};
 function hintFor(page){return hints[page]||'Pista: selecciona un módulo.'}
+// Raise the pointed crossword word; other keys settle down without obstructing content.
+function highlightCrosswordPath(target){
+  const el=target?.closest?.('.board-tile[data-path], .board-clues [data-route]');
+  const board=el?.closest('.board');if(!board)return;
+  const route=el.dataset.route||(el.dataset.path||'').split('|')[0];
+  if(!route)return;
+  board.querySelectorAll('.board-tile[data-path]').forEach(cell=>{
+    const active=(cell.dataset.path||'').split('|').includes(route);
+    cell.classList.toggle('is-path',active);
+    cell.classList.toggle('is-floor',!active);
+  });
+  board.querySelectorAll('.board-clues [data-route]').forEach(clue=>clue.classList.toggle('is-path',clue.dataset.route===route));
+}
+function clearCrosswordPath(board){
+  if(!board)return;
+  board.querySelectorAll('.board-tile.is-path,.board-tile.is-floor,.board-clues .is-path').forEach(el=>el.classList.remove('is-path','is-floor'));
+}
+document.addEventListener('pointerover',e=>highlightCrosswordPath(e.target));
+document.addEventListener('pointerout',e=>{
+  const board=e.target?.closest?.('.board');
+  if(board&&(!e.relatedTarget||!board.contains(e.relatedTarget)))clearCrosswordPath(board);
+});
+document.addEventListener('focusin',e=>highlightCrosswordPath(e.target));
+document.addEventListener('focusout',e=>{
+  const board=e.target?.closest?.('.board');
+  if(board&&(!e.relatedTarget||!board.contains(e.relatedTarget)))clearCrosswordPath(board);
+});
+
 function crossword(){const grid=new Map(),words=[
  {name:'MATRICULA',row:4,col:0,vertical:false,route:'inscripcion'},
  {name:'HORARIO',row:1,col:1,vertical:true,route:'horario'},
