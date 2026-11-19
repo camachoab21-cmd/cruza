@@ -8,14 +8,14 @@
 
 CRUZA transforma una experiencia de gestión académica en un crucigrama interactivo. El proyecto conserva **dos entregables distintos**:
 
-1. **`index.html`**: versión visual autónoma anterior, para abrir sin instalación, con registros de demostración en el navegador. **No ofrece autenticación real**. Se conserva para la exposición y como respaldo.
+1. **`index.html`**: vista visual pública de CRUZA 3, diseñada con la misma paleta y el crucigrama luminoso de la aplicación actual. Permite explorar rutas y colores, pero **no inicia sesión ni almacena datos**. La demostración HTML anterior está conservada en `respaldo/CRUZA-HTML-DEMO-2026.html`.
 2. **`app/`**: **versión con servidor, SQLite y validaciones reales**. Es la recomendada para probar seguridad y compartir cambios académicos entre sesiones del mismo servidor. Por defecto se ejecuta solo en este computador (`127.0.0.1`); habilitar otros dispositivos requiere configurar de forma expresa una red segura y controles adicionales.
 
 ## Abrir CRUZA y ver el recorrido (ruta más sencilla)
 
 - **Ver el recorrido sin instalar nada:** abre `VER-RECORRIDO.html` en tu navegador, dentro de la carpeta descomprimida. Reproduce el video o elige los capítulos para saltar a cada pantalla. También está el MP4 `docs/CRUZA3-VISITA-GUIADA.mp4`.
 - **Abrir la aplicación con servidor y datos compartidos:** haz doble clic en `ABRIR-CRUZA.bat`. Si es la primera vez, instalará sus dependencias; después iniciará el servidor y abrirá `http://127.0.0.1:8765`.
-- **Versión visual sin instalación:** `index.html` conserva la demostración HTML autónoma anterior y funciona sin servidor, pero **sus controles de acceso no son seguridad real**.
+- **Versión visual pública sin instalación:** [GitHub Pages](https://camachoab21-cmd.github.io/cruza/) muestra el mapa interactivo y la nueva identidad luminosa de CRUZA 3. Los botones de la vista ilustran módulos; **no autentican ni modifican datos**.
 
 La visita guiada fue elaborada con capturas de acciones ejecutadas en Chromium. El frontend original estuvo conectado a **la API HTTP real de FastAPI/SQLite mediante un puente de pruebas**, porque Chromium de este entorno bloqueó la navegación directa a `localhost`. La verificación visual directa en Windows sigue siendo necesaria.
 
