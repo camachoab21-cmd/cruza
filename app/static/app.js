@@ -4,7 +4,7 @@ const root=document.getElementById('app');
 const state={user:null,csrf:null,data:null,page:'tablero',busy:false,loginShow:false,
   draftMobile:'materias',filterText:'',filterType:'',filterSemester:'',calendarDate:'2026-11-11',
   agendaDone:false,teacherGroup:null,editReminder:null,courseSim:{},roleNavigation:false,
-  ambientTool:'brush',ambientEnabled:true,loginUser:'',loginPass:''};
+  ambientTool:'pencil',ambientEnabled:true,loginUser:'',loginPass:''};
 const roleMenu={student:[['tablero','Mi tablero'],['pensum','Pensum'],['inscripcion','Inscripción'],
  ['horario','Horario'],['calendario','Calendario'],['agenda','Mi agenda'],['notas','Notas'],
  ['asistencia','Asistencia'],['historial','Historial'],['perfil','Perfil']],
@@ -128,7 +128,7 @@ function shell(){const title=roleMenu[state.user.role].find(([id])=>id===state.p
  <div class="row-left">${btn('☰ Menú','menu','btn-mini mobile-menu', 'aria-expanded="false" aria-controls="sidebar"')}
  <strong class="name">${escapeHtml(title)}</strong><span class="pill">PERÍODO 2026-2</span></div>
  <div class="controls">${btn('☀ / ☾','theme','btn-mini','aria-label="Alternar modo día y noche"')}
- ${btn('✎ / 🖌','tool','btn-mini','title="Alternar lápiz y pincel"')}
+ ${btn('✎ Lápiz','tool','btn-mini','title="Alternar lápiz y crayón" aria-pressed="false"')}
  ${btn('Pistas','toggle-hints','btn-mini','aria-pressed="true" aria-label="Mostrar u ocultar pistas contextuales"')}
  </div></header><aside id="hint" class="hint-bar" role="status" aria-live="polite">${escapeHtml(hintFor(state.page))}</aside><div id="content" class="page">${pageContent()}</div>
  <footer class="small muted" style="margin-top:42px;border-top:1px solid var(--line);padding-top:18px">CRUZA · Campus Académico · ${escapeHtml(roleNames[state.user.role])}</footer>
@@ -142,6 +142,7 @@ function pageContent(){switch(state.user.role){
 function render(){if(!state.user){renderLogin();return;}
  if(!roleMenu[state.user.role].some(([r])=>r===state.page))state.page=roleMenu[state.user.role][0][0];
  root.innerHTML=shell();
+ window.CruzaTools?.setMode(state.ambientTool);
  document.getElementById('toast-region')?.replaceChildren();
  const hintsDisabled=localStorage.getItem('cruza-hints')==='0';
  const ribbon=document.getElementById('hint');if(ribbon)ribbon.hidden=hintsDisabled;
@@ -737,25 +738,22 @@ function toggleTheme(){const next=document.documentElement.dataset.theme==='dark
  document.documentElement.dataset.theme=next;localStorage.setItem('cruza-theme',next);notify(next==='dark'?'Modo noche activado':'Modo día activado');}
 function applyTheme(){const saved=localStorage.getItem('cruza-theme');document.documentElement.dataset.theme=
   saved||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');}
-function toggleTool(){state.ambientTool=state.ambientTool==='brush'?'pencil':'brush';
- notify(state.ambientTool==='brush'?'Pincel de tinta activado':'Lápiz de crucigrama activado');}
-/* Canvas pigment: only on the free background. Triangle gesture swaps brush/pencil;
-   no pointer events intercepted and no trailing animation when pigment settles. */
-const backgroundCanvas=document.getElementById('ambient-canvas');const ctx=backgroundCanvas.getContext('2d');
-let lines=[],lastPointer=null,canvasAnimation=0,gesture=[];const prefersReduced=()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-function resizeCanvas(){backgroundCanvas.width=window.innerWidth*Math.min(devicePixelRatio||1,2);
- backgroundCanvas.height=window.innerHeight*Math.min(devicePixelRatio||1,2);
- backgroundCanvas.style.width=innerWidth+'px';backgroundCanvas.style.height=innerHeight+'px';ctx.setTransform(backgroundCanvas.width/innerWidth,0,0,backgroundCanvas.height/innerHeight,0,0)}
-resizeCanvas();addEventListener('resize',resizeCanvas,{passive:true});
-function drawAmbient(){canvasAnimation=0;ctx.clearRect(0,0,innerWidth,innerHeight);const now=performance.now();
- lines=lines.filter(x=>now-x.at<3200);for(const seg of lines){ctx.beginPath();ctx.moveTo(seg.a[0],seg.a[1]);ctx.lineTo(seg.b[0],seg.b[1]);
- ctx.strokeStyle=`rgba(${seg.rgb},${Math.max(0,(3200-(now-seg.at))/3200)*.33})`;ctx.lineWidth=seg.pencil?1.5:3.3;ctx.lineCap='round';ctx.stroke()}
- if(lines.length)canvasAnimation=requestAnimationFrame(drawAmbient);
+function toggleTool(){
+ state.ambientTool=state.ambientTool==='pencil'?'crayon':'pencil';
+ window.CruzaTools?.setMode(state.ambientTool);
+ notify(state.ambientTool==='crayon'?'Crayón multicolor activado':'Lápiz de crucigrama activado');
 }
-function isFree(target){if(!target||target.closest('button,input,textarea,select,a,.card,.auth-form-card,.sidebar,.topbar,.hint-bar,.overlay'))return false;
- return !!target.closest('body,.auth-art,.workspace,.auth-scene,.page,.auth-copy');}
-let drawing=false;document.addEventListener('pointerdown',e=>{
- if(e.pointerType!=='mouse'||prefersReduced()||!isFree(e.target))return;drawing=true;gesture=[[e.clientX,e.clientY]];lastPointer=[e.clientX,e.clientY];
+/* El dibujo multicolor se gestiona en cruza-tools.js. Conservamos el gesto
+   original de triángulo para cambiar entre lápiz y crayón en zonas libres. */
+const prefersReduced=()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function isFree(target){
+ if(!target||target.closest('button,input,textarea,select,a,.card,.auth-form-card,.sidebar,.topbar,.hint-bar,.overlay'))return false;
+ return !!target.closest('body,.auth-art,.workspace,.auth-scene,.page,.auth-copy');
+}
+let drawing=false,gesture=[];
+document.addEventListener('pointerdown',e=>{
+ if(e.pointerType!=='mouse'||prefersReduced()||!isFree(e.target))return;
+ drawing=true;gesture=[[e.clientX,e.clientY]];
 },{passive:true});
 document.addEventListener('pointerover',e=>{
  const el=document.getElementById('hint');if(!el||el.hidden)return;
@@ -770,15 +768,10 @@ document.addEventListener('focusin',e=>{
  if(hint)el.textContent=`Pista: ${hint}`;
 });
 document.addEventListener('pointermove',e=>{
- if(e.pointerType!=='mouse'||prefersReduced()||!isFree(e.target)){lastPointer=null;return;}
- const p=[e.clientX,e.clientY];if(drawing)gesture.push(p);
- if(lastPointer&&Math.hypot(p[0]-lastPointer[0],p[1]-lastPointer[1])>1){
- const old=lastPointer,rgb=state.ambientTool==='pencil'?'95,114,65':'116,101,167';
- lines.push({a:old,b:p,at:performance.now(),rgb,pencil:state.ambientTool==='pencil'});
- if(lines.length>180)lines.splice(0,lines.length-180);
- if(!canvasAnimation)canvasAnimation=requestAnimationFrame(drawAmbient);
- }
- lastPointer=p;
+ if(!drawing)return;
+ if(e.pointerType!=='mouse'||prefersReduced()||!isFree(e.target)){drawing=false;gesture=[];return;}
+ gesture.push([e.clientX,e.clientY]);
+ if(gesture.length>240)gesture=gesture.slice(-240);
 },{passive:true});
 function triangleGesture(points){if(points.length<30)return false;
  const f=points[0],l=points.at(-1),minX=Math.min(...points.map(p=>p[0])),maxX=Math.max(...points.map(p=>p[0])),minY=Math.min(...points.map(p=>p[1])),maxY=Math.max(...points.map(p=>p[1]));
@@ -791,8 +784,8 @@ function triangleGesture(points){if(points.length<30)return false;
  return area>dx*dy*.18;
 }
 document.addEventListener('pointerup',e=>{if(!drawing)return;drawing=false;
- if(triangleGesture(gesture))toggleTool();gesture=[];lastPointer=null;},{passive:true});
-document.addEventListener('pointercancel',()=>{drawing=false;gesture=[];lastPointer=null},{passive:true});
+ if(triangleGesture(gesture))toggleTool();gesture=[];},{passive:true});
+document.addEventListener('pointercancel',()=>{drawing=false;gesture=[]},{passive:true});
 /* Dust in the crossword surface: separate from pencil strokes; no solid lines. */
 let dustFrame=0;
 function mountPowder(){let canvas=document.getElementById('powder');if(!canvas||prefersReduced())return;
