@@ -1,0 +1,70 @@
+/* CRUZA 3: herramientas de dibujo que no interceptan navegación, formularios ni teclado. */
+#cruza-art-cursor{
+ position:fixed;left:0;top:0;z-index:90;pointer-events:none;
+ width:28px;height:44px;opacity:0;visibility:hidden;
+ transform:translate(-50%,-95%);
+ transition:width .24s cubic-bezier(.18,.76,.24,1.12),height .24s cubic-bezier(.18,.76,.24,1.12),
+            opacity .16s ease,filter .24s ease,visibility 0s linear .18s;
+ filter:drop-shadow(0 3px 3px rgba(49,71,48,.23));
+}
+#cruza-art-cursor.is-visible{opacity:1;visibility:visible;transition-delay:0s}
+#cruza-art-cursor.is-large{
+ width:92px;height:138px;
+ filter:drop-shadow(0 12px 12px rgba(55,73,48,.27)) drop-shadow(0 0 12px rgba(188,238,114,.32));
+}
+#cruza-art-cursor svg{display:block;width:100%;height:100%;overflow:visible}
+#cruza-art-cursor[data-tool=pencil] .tool-crayon,
+#cruza-art-cursor[data-tool=crayon] .tool-pencil{display:none}
+#cruza-art-cursor.is-large[data-tool=crayon]{width:99px;height:147px}
+html.cruza-art-cursor-on,html.cruza-art-cursor-on body{cursor:none}
+html.cruza-art-cursor-on .board-map,html.cruza-art-cursor-on .board-map *,
+html.cruza-art-cursor-on .map-stage,html.cruza-art-cursor-on .map-stage *{cursor:none!important}
+.cruza-pigment-layer{
+ position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;
+ z-index:18!important;pointer-events:none!important;opacity:.92;
+}
+.board-map .map-pencil{
+ opacity:1;transition:opacity .22s ease,filter .25s ease;
+}
+.board-map.cruza-map-has-cursor .map-pencil{
+ opacity:0!important;animation:none!important;filter:blur(3px)!important;
+}
+.board-map .map-stage{isolation:isolate}
+.board-map .map-stage:before{
+ content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+ background:
+  radial-gradient(ellipse 32% 38% at var(--cruza-x,42%) var(--cruza-y,51%),rgba(133,235,182,.34),transparent 89%),
+  radial-gradient(ellipse 47% 42% at 27% 39%,rgba(213,251,111,.30),transparent 86%),
+  radial-gradient(ellipse 39% 48% at 78% 52%,rgba(178,132,251,.29),transparent 82%),
+  radial-gradient(ellipse 39% 44% at 50% 87%,rgba(255,179,115,.25),transparent 83%);
+ background-size:100% 100%,120% 120%,125% 125%,115% 115%;
+ animation:cruzaGlowBreathing 12s ease-in-out infinite alternate;
+ transition:background-position .22s ease-out;
+}
+@keyframes cruzaGlowBreathing{
+ from{opacity:.67;filter:hue-rotate(-9deg) saturate(1.05)}
+ to{opacity:1;filter:hue-rotate(12deg) saturate(1.25)}
+}
+[data-theme=dark] .board-map .map-stage:before{
+ background:
+  radial-gradient(ellipse 38% 42% at var(--cruza-x,48%) var(--cruza-y,45%),rgba(85,236,204,.30),transparent 91%),
+  radial-gradient(ellipse 49% 45% at 25% 30%,rgba(189,252,94,.23),transparent 82%),
+  radial-gradient(ellipse 45% 48% at 75% 53%,rgba(190,146,255,.35),transparent 83%),
+  radial-gradient(ellipse 43% 40% at 49% 90%,rgba(255,172,121,.21),transparent 81%);
+}
+[data-theme=dark] #cruza-art-cursor.is-large{
+ filter:drop-shadow(0 13px 12px rgba(0,0,0,.54)) drop-shadow(0 0 12px rgba(184,153,254,.54))
+}
+@media (max-width:700px){
+ #cruza-art-cursor.is-large{width:67px;height:99px}
+ #cruza-art-cursor.is-large[data-tool=crayon]{width:74px;height:110px}
+}
+@media(hover:none),(pointer:coarse),(prefers-reduced-motion:reduce){
+ #cruza-art-cursor{display:none!important}
+ .board-map .map-pencil{opacity:1!important}
+ .board-map .map-stage:before{animation:none!important}
+ .cruza-pigment-layer{opacity:.6}
+}
+@media print{
+ #cruza-art-cursor,.cruza-pigment-layer{display:none!important}
+}
