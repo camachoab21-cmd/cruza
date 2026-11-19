@@ -50,6 +50,7 @@ with sync_playwright() as playwright:
         page.locator('#preview-tool').click()
         assert page.evaluate('window.CruzaTools.getMode()')=='pencil'
         page.mouse.move(3,3)
+        page.wait_for_timeout(350)  # Espera a que termine la transición de escala de 240 ms
         outside=page.evaluate('window.CruzaTools.debug()')
         assert outside['width']<50 and outside['insideMap'] is False,outside
         # A shared crossword intersection must offer both routes on repeat clicks.
