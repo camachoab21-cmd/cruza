@@ -5,6 +5,8 @@ from cruza_assets import inline_tools
 import re, shutil
 
 ROOT=Path(__file__).resolve().parents[1]
+OUTPUT=ROOT/'docs'/'auditoria'
+OUTPUT.mkdir(parents=True,exist_ok=True)
 html=inline_tools((ROOT/'app/templates/index.html').read_text('utf8'),ROOT)
 css=(ROOT/'app/static/app.css').read_text('utf8')
 html,n=re.subn(r'<link\s+rel="stylesheet"\s+href="/static/app\.css[^"]*"\s*/?>',
@@ -64,8 +66,16 @@ with sync_playwright() as pw:
         assert 'grupos' in page.locator('#hint').inner_text().lower() or 'matrícula' in page.locator('#hint').inner_text().lower()
         page.mouse.move(0,0)
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+3'),f'Desbordamiento a {width}px'
+        first_theme=page.evaluate('document.documentElement.dataset.theme')
+        if width==1440:
+            page.screenshot(path=str(OUTPUT/'cruza3-nueva-interfaz-claro-o-tema-inicial.png'),full_page=True)
         page.locator('[data-action="theme"]').click()
-        assert page.evaluate('document.documentElement.dataset.theme')=='dark' or page.evaluate('document.documentElement.dataset.theme')=='light'
+        second_theme=page.evaluate('document.documentElement.dataset.theme')
+        assert first_theme!=second_theme,(first_theme,second_theme)
+        if width==1440:
+            page.screenshot(path=str(OUTPUT/'cruza3-nueva-interfaz-tema-alternativo.png'),full_page=True)
+        if width==390:
+            page.screenshot(path=str(OUTPUT/'cruza3-nueva-interfaz-movil.png'),full_page=True)
         assert not errors,errors
         page.close()
     browser.close()
