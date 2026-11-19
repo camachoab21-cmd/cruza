@@ -60,7 +60,7 @@ with sync_playwright() as pw:
         page.evaluate('render()')
         page.wait_for_selector('[data-font-trigger]')
         assert abs(page.evaluate('CruzaUX.debug().scale')-1.12)<.001
-        page.locator('[data-route="inscripcion"]').first.hover()
+        page.locator('#content [data-route="inscripcion"]').hover()
         assert 'grupos' in page.locator('#hint').inner_text().lower() or 'matrícula' in page.locator('#hint').inner_text().lower()
         page.mouse.move(0,0)
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+3'),f'Desbordamiento a {width}px'
