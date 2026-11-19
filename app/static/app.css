@@ -278,3 +278,112 @@ input:focus,textarea:focus,select:focus{border-color:#889c58}
  .tile-container{width:100%;min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden}
  .auth-tiles{min-width:max-content;width:max-content}
 }
+
+
+/* CRUZA: recuperación de color y del mapa original, manteniendo backend real */
+:root{
+ --paper:#fafbf3;--paper2:#fffef9;--ink:#253427;--muted:#536455;--line:#ceddb9;
+ --lime:#d6f873;--purple:#cfb4f6;--peach:#ffbd8d;
+ --workspace-grid:rgba(115,148,88,.10);--glass:rgba(255,255,248,.90);--wash:rgba(227,244,195,.74)
+}
+[data-theme=dark]{
+ --paper:#253329;--paper2:#2d4033;--ink:#f5f7e9;--muted:#d4dfcc;
+ --line:#6f8570;--lime:#c2e96b;--purple:#bca6ed;--peach:#f5b18a;
+ --workspace-grid:rgba(192,220,176,.07);--glass:rgba(43,63,47,.90);--wash:rgba(97,132,87,.39)
+}
+.board.board-map{
+ position:relative;display:block;min-height:0;padding:0;overflow:hidden;isolation:isolate;
+ background:radial-gradient(ellipse 60% 75% at 20% 37%,rgba(220,255,125,.74),transparent 79%),
+ radial-gradient(ellipse 62% 90% at 96% 62%,rgba(211,173,248,.48),transparent 78%),
+ linear-gradient(115deg,#fffef3 0%,#f6f9e7 50%,#f4eafa 100%);
+ border:1px solid #b6cc9f;border-radius:24px;
+ box-shadow:0 18px 40px rgba(67,101,55,.11);transform:none
+}
+.board.board-map:hover{transform:none;border-color:#92bb68;box-shadow:0 24px 54px rgba(67,101,55,.14)}
+.board-map:before{
+ content:'';position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.63;
+ background-image:linear-gradient(rgba(120,146,105,.12) 1px,transparent 1px),
+ linear-gradient(90deg,rgba(120,146,105,.12) 1px,transparent 1px);background-size:22px 22px
+}
+.board-map:after{
+ content:'';position:absolute;width:390px;height:390px;right:-150px;top:-180px;
+ background:radial-gradient(circle,rgba(218,174,248,.48),transparent 71%);
+ filter:blur(28px);opacity:1;pointer-events:none;z-index:0
+}
+.board-map>.map-head,.board-map>.map-stage,.board-map>.map-footer{position:relative;z-index:2}
+.map-head,.map-footer{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.map-head{padding:18px 22px 0}
+.map-kicker{
+ display:inline-flex;align-items:center;gap:9px;padding:8px 11px;
+ color:#324533;background:#fdfdf0a8;border:1px solid #9db47b;border-radius:8px;
+ font:650 .69rem/1 Consolas,'Courier New',monospace;letter-spacing:.12em
+}
+.map-dot{width:8px;height:8px;border-radius:50%;background:#669340;box-shadow:0 0 9px #9bd365}
+.map-count{font:600 .66rem Consolas,'Courier New',monospace;letter-spacing:.09em;color:#40503c}
+.map-stage{
+ position:relative;display:flex;align-items:center;justify-content:center;
+ min-height:clamp(330px,36vw,410px);padding:22px 16px 10px
+}
+.map-stage .board-tiles{
+ --map-cell:clamp(28px,4.5vw,45px);
+ display:grid;grid-template-columns:repeat(9,var(--map-cell));
+ grid-template-rows:repeat(7,var(--map-cell));gap:4px;
+ width:max-content;max-width:100%;margin:0;position:relative;z-index:2;perspective:800px
+}
+.board-map .board-tile{
+ width:var(--map-cell);height:var(--map-cell);min-width:0;
+ position:relative;border:1px solid #8caa7f;border-radius:5px;
+ font:750 clamp(14px,2vw,21px)/1 Consolas,'Courier New',monospace;
+ color:#263b30;background:#fffefa;letter-spacing:0;
+ box-shadow:0 4px 0 rgba(82,107,72,.30),0 6px 11px rgba(53,81,52,.11);
+ animation:tileDrop .36s cubic-bezier(.16,.8,.26,1.2) both;animation-delay:calc(var(--tile-i,0) * 9ms)
+}
+.board-map .board-tile.tone-lime{background:#d6f68a}
+.board-map .board-tile.tone-lavender{background:#d4bdf4;border-color:#a789c8}
+.board-map .board-tile.tone-peach{background:#ffbd93;border-color:#da9a74}
+.board-map .board-tile.tone-cream{background:#fffefa;border-color:#98ad94}
+.board-map .board-tile.void{border:0;box-shadow:none;background:transparent;visibility:hidden}
+.board-map .board-tile[data-number]:before{
+ content:attr(data-number);position:absolute;top:2px;left:3px;
+ font:700 .53rem Consolas,monospace;color:#435447
+}
+.board-map .board-tile[data-number=""]:before{content:none}
+.board-map .board-tile[data-path]:hover,
+.board-map .board-tile[data-path].is-path{
+ position:relative;z-index:4;background:#e4ff9a;border-color:#79a657;
+ transform:translate3d(0,-9px,0) rotateX(-9deg) scale(1.05);
+ box-shadow:0 12px 16px rgba(57,93,42,.2),inset 0 -3px #a9cd79
+}
+.board-map .board-tile[data-path].is-floor{
+ transform:translate3d(0,6px,0) rotateX(8deg) scale(.97);opacity:.67
+}
+.board-map .board-tile[data-path]:focus-visible{outline:3px solid #8462c4;outline-offset:3px;z-index:5}
+.map-footer{padding:8px 22px 18px;color:#314032;font-size:.83rem;font-weight:650}
+.map-arrow{font-size:1.2rem;font-weight:400}
+.dashboard-status{margin:20px 0 0}
+.dashboard-status .list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.dashboard-status .list .item{display:grid;gap:5px;align-content:start;padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--paper2);min-height:85px}
+.dashboard-status .list .item span{overflow-wrap:anywhere;font-size:.82rem}
+.stat.purple{border-top:4px solid #ba8ef6}
+.stat.peach{border-top:4px solid #f8a56c}
+.stat:not(.purple):not(.peach){border-top:4px solid #b9e46a}
+[data-theme=dark] .board.board-map{
+ background:radial-gradient(circle at 17% 30%,rgba(138,177,73,.29),transparent 59%),
+ radial-gradient(circle at 90% 65%,rgba(150,115,204,.28),transparent 68%),
+ linear-gradient(110deg,#354733,#354238 53%,#44394e);border-color:#7b9472
+}
+[data-theme=dark] .map-kicker{color:#263927;background:#f5f8e8;border-color:#a7c28f}
+[data-theme=dark] .map-count,[data-theme=dark] .map-footer{color:#f0f7de}
+@media(max-width:700px){
+ .map-stage{min-height:310px;padding:18px 6px}
+ .map-head,.map-footer{padding-left:14px;padding-right:14px}
+ .map-count{font-size:.57rem;text-align:right}
+ .map-kicker{font-size:.59rem;padding:7px}
+ .dashboard-status .list{grid-template-columns:1fr}
+ .dashboard-status .list .item{min-height:0}
+ .board-map .board-tile{font-size:clamp(14px,4vw,18px)}
+}
+@media(max-width:380px){.map-stage .board-tiles{--map-cell:clamp(23px,7vw,28px);gap:3px}}
+@media(prefers-reduced-motion:reduce){
+ .board-map .board-tile[data-path].is-path,.board-map .board-tile[data-path].is-floor{transform:none!important}
+}
