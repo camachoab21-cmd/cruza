@@ -174,7 +174,16 @@
           paint(e.clientX,e.clientY,area);
         }else prior=null;
       }else prior=null;
-    }else prior=null;
+    }else{
+      // El lápiz sigue dibujando sobre papel libre, sin cubrir controles ni texto.
+      // El tamaño grande continúa reservado exclusivamente para el crucigrama.
+      const blocked=e.target.closest('.auth-copy,.auth-hero-tiles,.brand,.auth-form-area,.sidebar,.topbar,.hint-bar,.card,.page-heading,form,nav,footer,table,article,button,a,input,textarea,select,[role="dialog"],[contenteditable="true"]');
+      const background=e.target.closest('.auth-art,.auth-scene,.workspace,.page,.shell');
+      const freeSurface=e.target.matches('.auth-art,.auth-scene,.auth-stars,.auth-star,.canvas-grid,.workspace,.page,.shell');
+      if(background&&freeSurface&&!blocked){
+        paint(e.clientX,e.clientY,{x:0,y:0,w:width,h:height});
+      }else prior=null;
+    }
   }
   document.addEventListener('pointermove',onPointer,{passive:true});
   document.addEventListener('pointerout',e=>{if(!e.relatedTarget)hide();},{passive:true});
