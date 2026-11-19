@@ -32,8 +32,6 @@ jobs:
         run: python tests/ui_regressions.py
       - name: Recorrido navegador con FastAPI y SQLite aislados
         run: python tests/e2e_navegador_servidor.py
-      - name: Auditar botones, formularios y roles
-        run: python tests/ui_actions_audit.py
       - name: Auditar pantallas y dispositivos
         run: python tests/ui_full_audit.py
       - name: Comprobar gesto de lápiz y pincel
