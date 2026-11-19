@@ -47,6 +47,13 @@ with sync_playwright() as playwright:
         assert page.evaluate('window.__cruzaPencilCheck().mode')=='brush'
         page.locator('#preview-tool').click()
         assert page.evaluate('window.__cruzaPencilCheck().mode')=='pencil'
+        # A shared crossword intersection must offer both routes on repeat clicks.
+        crossing=board.locator('.board-tile[data-path*="|"]').first
+        crossing.click()
+        first=page.locator('#preview-title').inner_text()
+        crossing.click()
+        second=page.locator('#preview-title').inner_text()
+        assert first!=second,(first,second,'Intersección sin alternativas')
         page.locator('#preview-theme').click()
         assert page.evaluate('document.documentElement.dataset.theme')=='dark'
         assert not errors,errors
