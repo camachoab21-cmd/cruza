@@ -83,7 +83,7 @@ def audit():
       assert page.locator('#sidebar').evaluate('(e)=>e.classList.contains("open")')
      page.locator(f'.sidebar [data-route="{key}"]').click()
      page.wait_for_function('key=>state.page===key',arg=key)
-    for width,height,theme in [(1440,900,'light'),(390,844,'dark'),(768,1024,'light')]:
+    for width,height,theme in [(1440,900,'light'),(390,844,'dark'),(768,1024,'light'),(1920,1080,'dark'),(1366,768,'light'),(1024,768,'dark'),(360,800,'light')]:
      page.set_viewport_size({'width':width,'height':height})
      if width==1440:
       login('ESTUDIANTE','CRUZA2026')
@@ -91,12 +91,10 @@ def audit():
       assert page.locator('#hint').is_visible()
       page.locator('[data-action="toggle-hints"]').click();assert page.locator('#hint').is_hidden()
       page.locator('[data-action="toggle-hints"]').click();assert page.locator('#hint').is_visible()
-     elif width==390:
-      page.locator('[data-action="theme"]').click()
-      assert page.evaluate("document.documentElement.dataset.theme")=='dark'
      else:
-      page.locator('[data-action="theme"]').click()
-      assert page.evaluate("document.documentElement.dataset.theme")=='light'
+      if page.evaluate('document.documentElement.dataset.theme')!=theme:
+       page.locator('[data-action="theme"]').click()
+      assert page.evaluate('document.documentElement.dataset.theme')==theme
      keys=[x[0] for x in page.evaluate('roleMenu.student')]
      for key in keys:
       route(key,width);check('student',key,width,height,theme)
@@ -115,7 +113,7 @@ def audit():
        page.locator('[data-action="cal-next-month"]').click()
        assert page.evaluate('state.calendarDate')!=before
        page.locator('[data-action="cal-prev-month"]').click()
-     if width==768:
+     if width==360:
       page.set_viewport_size({'width':1440,'height':900});logout()
     # Teacher + admin in desktop and mobile. Each module is traversed and captured.
     for role,user,pwd in [('teacher','DOCENTE','CLASE2026'),('admin','ADMIN','ADMIN2026')]:
