@@ -53,6 +53,15 @@ with sync_playwright() as playwright:
     tile.hover()
     assert page.locator('.board-tile.is-path').count()>0
     assert page.locator('.board-tile.is-floor').count()>0
+    page.wait_for_timeout(950)
+    active=page.locator('.board-tile.is-path').first
+    floor=page.locator('.board-tile.is-floor').first
+    assert page.locator('.map-pencil svg').count()==1
+    assert active.locator('.tile-face').count()==1
+    a=active.bounding_box();af=active.locator('.tile-face').bounding_box()
+    f=floor.bounding_box();ff=floor.locator('.tile-face').bounding_box()
+    assert af['y']<a['y']-4,(a,af,'La ruta activa no se mueve')
+    assert ff['y']>f['y']+8,(f,ff,'Las otras casillas no caen')
     page.mouse.move(1320,870)
     assert page.locator('.board-tile.is-path').count()==0
     tile.focus()
