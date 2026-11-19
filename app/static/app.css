@@ -269,3 +269,12 @@ input:focus,textarea:focus,select:focus{border-color:#889c58}
 @media(prefers-reduced-motion:reduce){
  .board-tiles .board-tile.is-path,.board-tiles .board-tile.is-floor{transform:none!important}
 }
+
+/* Prevent the login's responsive grid from growing to the min-content width
+   of a long animated username/password. The tiles remain scrollable INSIDE their field. */
+@media(max-width:900px){
+ .auth-scene{grid-template-columns:minmax(0,1fr)}
+ .auth-form-area,.auth-form-card,.auth-field{min-width:0}
+ .tile-container{width:100%;min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden}
+ .auth-tiles{min-width:max-content;width:max-content}
+}

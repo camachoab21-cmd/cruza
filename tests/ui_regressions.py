@@ -61,7 +61,12 @@ with sync_playwright() as playwright:
     page.set_viewport_size({'width':390,'height':844})
     page.evaluate("renderLogin()")
     page.locator('#auth-user').fill('USUARIODELARGAPRUEBA1234567890')
-    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth+2"), 'Overflow en acceso móvil'
+    sizes=page.evaluate("""() => ({
+      viewport:innerWidth, scroll:document.documentElement.scrollWidth,
+      offenders:[...document.querySelectorAll('*')].filter(el=>el.getBoundingClientRect().right>innerWidth+2)
+        .slice(0,12).map(el=>({tag:el.tagName,cls:el.className,scroll:el.scrollWidth,right:Math.round(el.getBoundingClientRect().right)}))
+    })""")
+    assert sizes['scroll'] <= sizes['viewport']+2, sizes
     assert not errors,errors
     browser.close()
 print('OK: acceso sin huecos, animación original, filtros y móvil.')
