@@ -45,7 +45,7 @@ La interfaz usa una **API real con SQLite**, cookies HTTP-only, comprobaciones d
 
 ## Opción B — Plan de emergencia sin servidor
 
-En el repositorio, abre el archivo **`index.html`** descargado: es el prototipo visual autónomo anterior. Sirve para enseñar diseño y navegación; **no proporciona autenticación real, base de datos ni verificación del servidor**.
+Abre la [vista visual de CRUZA 3 en GitHub Pages](https://camachoab21-cmd.github.io/cruza/) o el archivo **`index.html`** descargado. Muestra el mapa luminoso y las rutas, pero **no proporciona autenticación, persistencia ni validaciones del servidor**. El prototipo HTML antiguo se preserva en `respaldo/CRUZA-HTML-DEMO-2026.html`.
 
 Otra alternativa aún más segura para la exposición es abrir **`VER-RECORRIDO.html`** desde la carpeta descargada. Reproduce el video incluido en **`docs/CRUZA3-VISITA-GUIADA.mp4`** (46,5 s) y permite saltar entre capítulos. La grabación está compuesta por capturas verificadas de recorridos, no es un video continuo de clics.
 
