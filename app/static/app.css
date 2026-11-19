@@ -387,3 +387,22 @@ input:focus,textarea:focus,select:focus{border-color:#889c58}
 @media(prefers-reduced-motion:reduce){
  .board-map .board-tile[data-path].is-path,.board-map .board-tile[data-path].is-floor{transform:none!important}
 }
+
+
+/* Accessibility polish after real Chromium screenshots: bright cards need dark readable labels. */
+.card.purple .eyebrow,.card.purple small,
+.card.peach .eyebrow,.card.peach small{color:#40433b}
+.card.purple strong,.card.peach strong{color:#273329}
+.preview-blocks .card.purple p,.preview-blocks .card.peach p,
+.preview-blocks .card.purple .eyebrow,.preview-blocks .card.peach .eyebrow{color:#3a3d36}
+.preview-actions button:not(.active){background:var(--paper2);color:var(--ink);border-color:var(--line)}
+.board-map .board-tile[data-path].is-floor{opacity:.83}
+.map-stage:after{
+ content:'';position:absolute;bottom:23px;left:6%;z-index:1;
+ width:185px;height:43px;transform:rotate(-9deg);
+ background:radial-gradient(ellipse at 50% 55%,rgba(89,135,107,.42),transparent 67%),
+ repeating-radial-gradient(ellipse at 48% 65%,rgba(88,131,104,.22) 0 1px,transparent 2px 6px);
+ clip-path:polygon(0 66%,27% 29%,76% 6%,100% 29%,68% 56%,17% 97%);
+ filter:blur(1.8px);opacity:.75;pointer-events:none
+}
+@media(max-width:700px){.map-stage:after{width:90px;height:25px;bottom:15px;opacity:.35}}
