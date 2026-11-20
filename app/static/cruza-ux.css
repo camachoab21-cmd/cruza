@@ -164,3 +164,76 @@ button,input,textarea,select{font-size:inherit}
  .workspace:before,.auth-art:before{opacity:.15}
 }
 @media print{.cruza-font-controls{display:none!important}}
+
+
+/* Edición 20.11: paletas por sección para que los módulos no sean bloques opacos. */
+body[data-module]{
+ --section-a:var(--cruza-turquoise);
+ --section-b:var(--purple);
+ --section-c:var(--peach);
+}
+body[data-module="tablero"],body[data-module="inscripcion"],body[data-module="estudiantes"]{
+ --section-a:var(--lime);--section-b:var(--cruza-turquoise);--section-c:var(--purple);
+}
+body[data-module="pensum"],body[data-module="horario"],body[data-module="catalogo"]{
+ --section-a:var(--purple);--section-b:var(--cruza-turquoise);--section-c:var(--peach);
+}
+body[data-module="notas"],body[data-module="historial"],body[data-module="auditoria"]{
+ --section-a:var(--peach);--section-b:var(--purple);--section-c:var(--cruza-turquoise);
+}
+body[data-module="calendario"],body[data-module="agenda"],body[data-module="recuperacion"]{
+ --section-a:var(--cruza-pink);--section-b:var(--cruza-turquoise);--section-c:var(--cruza-gold);
+}
+body[data-module="asistencia"],body[data-module="perfil"]{
+ --section-a:var(--cruza-turquoise);--section-b:var(--lime);--section-c:var(--peach);
+}
+.workspace{
+ background-image:
+  radial-gradient(ellipse 35% 30% at 94% 12%,color-mix(in srgb,var(--section-a) 33%,transparent),transparent 80%),
+  radial-gradient(ellipse 32% 36% at 7% 49%,color-mix(in srgb,var(--section-b) 24%,transparent),transparent 83%),
+  radial-gradient(ellipse 37% 31% at 69% 96%,color-mix(in srgb,var(--section-c) 30%,transparent),transparent 83%),
+  linear-gradient(var(--workspace-grid) 1px,transparent 1px),
+  linear-gradient(90deg,var(--workspace-grid) 1px,transparent 1px);
+}
+.workspace:before{
+ background-image:
+  radial-gradient(circle 2px at 35% 30%,rgba(255,255,255,.98) 99%,transparent),
+  radial-gradient(circle 3px at 70% 66%,color-mix(in srgb,var(--section-a) 77%,white) 98%,transparent),
+  radial-gradient(circle 2px at 52% 79%,color-mix(in srgb,var(--section-b) 55%,white) 98%,transparent),
+  radial-gradient(circle 1px at 27% 58%,white 98%,transparent),
+  radial-gradient(circle,rgba(255,255,255,.57),rgba(171,243,190,.14) 42%,transparent 75%);
+ opacity:.54;
+ animation:cruzaLensSparkle 3.6s ease-in-out infinite alternate;
+}
+[data-theme=dark] .workspace:before{opacity:.45}
+@keyframes cruzaLensSparkle{from{filter:brightness(.86)}to{filter:brightness(1.3)}}
+.page{animation-duration:.27s}
+.cruza-version{
+ background:linear-gradient(110deg,color-mix(in srgb,var(--lime) 48%,var(--paper2)),color-mix(in srgb,var(--purple) 35%,var(--paper2)));
+ border:1px solid color-mix(in srgb,var(--section-a) 43%,var(--line));
+ color:var(--ink);font-weight:750;font-size:.67rem;letter-spacing:.025em;
+ white-space:nowrap;
+}
+.cruza-release{display:inline-block;margin-left:14px;padding:2px 7px;
+ border:1px solid var(--line);border-radius:8px;color:var(--muted);
+ font-size:.72rem}
+.page-heading{padding:4px 0 10px}
+.page-heading h1{letter-spacing:-.047em}
+.page-heading:after{content:'';display:block;position:absolute;left:0;bottom:0;width:clamp(80px,20vw,220px);
+ height:3px;border-radius:9px;background:linear-gradient(90deg,var(--section-a),var(--section-b),transparent)}
+.page-heading{position:relative}
+.page .card:focus-within{border-color:color-mix(in srgb,var(--section-a) 65%,var(--line))}
+.card:hover{border-color:color-mix(in srgb,var(--section-a) 48%,var(--line))}
+.page .card-head{border-bottom:1px solid color-mix(in srgb,var(--section-b) 21%,var(--line));padding-bottom:9px}
+.page table{border-collapse:separate;border-spacing:0}
+.page th{background:color-mix(in srgb,var(--section-a) 13%,var(--paper2))}
+.page tr:hover td{background:color-mix(in srgb,var(--section-b) 9%,transparent)}
+.page input:focus-visible,.page select:focus-visible,.page textarea:focus-visible{
+ outline:2px solid color-mix(in srgb,var(--section-a) 72%,var(--ink));outline-offset:2px;
+}
+@media(max-width:1050px){.cruza-version{display:none}}
+@media(max-width:680px){
+ .workspace:before{width:160px;height:160px;opacity:.32}
+ .page .card-head{flex-wrap:wrap}
+}
+@media(prefers-reduced-motion:reduce){.workspace:before{animation:none!important}}
