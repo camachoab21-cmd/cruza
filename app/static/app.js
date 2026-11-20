@@ -154,14 +154,7 @@ function render(){if(!state.user){renderLogin();return;}
 function navigate(to){if(!state.user)return;if(!roleMenu[state.user.role].some(([r])=>r===to)){notify('No tienes permisos para entrar en este módulo.');return;}
  state.page=to;state.roleNavigation=false;render();window.scrollTo({top:0,behavior:'instant'});
 }
-const hints={tablero:'Tablero: cada palabra es una ruta de tu vida académica.',pensum:'Pensum: identifica las materias obligatorias, optativas y de libre elección.',
- inscripcion:'Inscripción: compara tu borrador con el horario vigente antes de confirmar.',horario:'Horario: consulta las clases que ya están confirmadas.',
- calendario:'Calendario: rojo es atrasado, naranja pendiente y verde entregado.',agenda:'Mi agenda: tus recordatorios personales no alteran las entregas académicas.',
- notas:'Notas: las calificaciones pendientes no cuentan como cero.',historial:'Historial: para el promedio acumulado se toma el último intento de cada materia.',
- perfil:'Perfil: tus datos académicos y tu identidad.',asistencia:'Asistencia: consulta tus registros o registra asistencia en los grupos autorizados.',
- estudiantes:'Estudiantes: el administrador crea, aprueba y desactiva cuentas.',recuperacion:'Recuperación: restablecer no desbloquea una cuenta automáticamente.',
- catalogo:'Catálogo: cada materia define créditos enteros y sus grupos ofrecidos.',auditoria:'Auditoría: registro de cambios importantes en la aplicación.'};
-function hintFor(page){return hints[page]||'Pista: selecciona un módulo.'}
+// Las ayudas de cada elemento se administran únicamente en cruza-ux.js.
 // Raise the pointed crossword word; other keys settle down without obstructing content.
 function highlightCrosswordPath(target){
   const el=target?.closest?.('.board-tile[data-path], .board-clues [data-route]');
