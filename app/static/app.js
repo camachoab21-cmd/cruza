@@ -126,7 +126,7 @@ function sideBar(){const menu=roleMenu[state.user.role];return `<aside class="si
 function shell(){const title=roleMenu[state.user.role].find(([id])=>id===state.page)?.[1]||'Mi tablero';
  return `<div class="shell">${sideBar()}<main class="workspace"><header class="topbar">
  <div class="row-left">${btn('☰ Menú','menu','btn-mini mobile-menu', 'aria-expanded="false" aria-controls="sidebar"')}
- <strong class="name">${escapeHtml(title)}</strong><span class="pill">PERÍODO 2026-2</span></div>
+ <strong class="name">${escapeHtml(title)}</strong><span class="pill">PERÍODO 2026-2</span><span class="pill cruza-version" title="Actualización visual 20 de noviembre">CRUZA · EDICIÓN 20.11</span></div>
  <div class="controls">${btn('☀ / ☾','theme','btn-mini','aria-label="Alternar modo día y noche"')}
  ${btn('✎ Lápiz','tool','btn-mini','title="Alternar lápiz y crayón" aria-pressed="false"')}
  ${btn('Ayuda','toggle-hints','btn-mini','aria-pressed="true" aria-label="Mostrar u ocultar la ayuda contextual"')}
