@@ -153,7 +153,8 @@
   function showHelp(){
     const dock=document.getElementById('hint');
     if(!dock||dock.hidden)return;
-    const message=keyboardHelp||pointerHelp||'';
+    // Una acción bajo el mouse tiene prioridad sobre el último botón enfocado.
+    const message=pointerHelp||keyboardHelp||'';
     if(dock.textContent!==message)dock.textContent=message;
     dock.classList.toggle('has-message',!!message);
   }
