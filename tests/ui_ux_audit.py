@@ -64,6 +64,12 @@ with sync_playwright() as pw:
         assert abs(page.evaluate('CruzaUX.debug().scale')-1.12)<.001
         page.locator('#content [data-route="inscripcion"]').hover()
         assert 'grupos' in page.locator('#hint').inner_text().lower() or 'matrícula' in page.locator('#hint').inner_text().lower()
+        # La ayuda no debe borrarse mediante el observador al actualizar su propio texto.
+        page.wait_for_timeout(300)
+        assert 'grupos' in page.locator('#hint').inner_text().lower() or 'matrícula' in page.locator('#hint').inner_text().lower()
+        assert page.evaluate("document.body.dataset.module")=='tablero'
+        if width==1440:
+            assert page.locator('.cruza-version').is_visible()
         page.mouse.move(0,0)
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+3'),f'Desbordamiento a {width}px'
         first_theme=page.evaluate('document.documentElement.dataset.theme')

@@ -62,7 +62,7 @@ function authField(id,title,autocomplete,placeholder,type){
  </div></div>`;
 }
 function particles(){return `<div class="auth-stars" aria-hidden="true">${Array.from({length:14},(_,i)=>`<i style="--i:${i};--x:${(i*29+11)%100}%;--y:${(i*17+7)%94}%"></i>`).join('')}</div>`}
-function renderLogin(){state.page='login';document.body.classList.remove('sidebar-open');document.getElementById('toast-region')?.replaceChildren();
+function renderLogin(){state.page='login';document.body.dataset.module='login';document.body.classList.remove('sidebar-open');document.getElementById('toast-region')?.replaceChildren();
  root.innerHTML=`<div class="auth-scene">${particles()}<div class="auth-star"></div>
  <section class="auth-art canvas-grid">${brand()}<div class="auth-copy"><div class="eyebrow">PROYECTO ACADÉMICO · UTS</div><h1>CRUZA<span style="color:var(--lime)">.</span></h1>
  <p>Cada materia, una palabra. Cada semestre, una nueva conexión.</p>
@@ -126,12 +126,12 @@ function sideBar(){const menu=roleMenu[state.user.role];return `<aside class="si
 function shell(){const title=roleMenu[state.user.role].find(([id])=>id===state.page)?.[1]||'Mi tablero';
  return `<div class="shell">${sideBar()}<main class="workspace"><header class="topbar">
  <div class="row-left">${btn('☰ Menú','menu','btn-mini mobile-menu', 'aria-expanded="false" aria-controls="sidebar"')}
- <strong class="name">${escapeHtml(title)}</strong><span class="pill">PERÍODO 2026-2</span></div>
+ <strong class="name">${escapeHtml(title)}</strong><span class="pill">PERÍODO 2026-2</span><span class="pill cruza-version" title="Actualización visual 20 de noviembre">CRUZA · EDICIÓN 20.11</span></div>
  <div class="controls">${btn('☀ / ☾','theme','btn-mini','aria-label="Alternar modo día y noche"')}
  ${btn('✎ Lápiz','tool','btn-mini','title="Alternar lápiz y crayón" aria-pressed="false"')}
- ${btn('Pistas','toggle-hints','btn-mini','aria-pressed="true" aria-label="Mostrar u ocultar pistas contextuales"')}
- </div></header><aside id="hint" class="hint-bar" role="status" aria-live="polite">${escapeHtml(hintFor(state.page))}</aside><div id="content" class="page">${pageContent()}</div>
- <footer class="small muted" style="margin-top:42px;border-top:1px solid var(--line);padding-top:18px">CRUZA · Campus Académico · ${escapeHtml(roleNames[state.user.role])}</footer>
+ ${btn('Ayuda','toggle-hints','btn-mini','aria-pressed="true" aria-label="Mostrar u ocultar la ayuda contextual"')}
+ </div></header><aside id="hint" class="hint-bar" role="status" aria-live="polite" aria-label="Ayuda contextual"></aside><div id="content" class="page">${pageContent()}</div>
+ <footer class="small muted" style="margin-top:42px;border-top:1px solid var(--line);padding-top:18px">CRUZA · Campus Académico · ${escapeHtml(roleNames[state.user.role])}<span class="cruza-release" aria-label="Edición de CRUZA 20 de noviembre">Edición 20.11</span></footer>
  </main></div>`}
 function pageContent(){switch(state.user.role){
  case 'student':return ({tablero:dashboard,pensum:curriculum,inscripcion:enrollment,horario:schedule,calendario:calendar,
@@ -141,6 +141,7 @@ function pageContent(){switch(state.user.role){
  }}
 function render(){if(!state.user){renderLogin();return;}
  if(!roleMenu[state.user.role].some(([r])=>r===state.page))state.page=roleMenu[state.user.role][0][0];
+ document.body.dataset.module=state.page;
  root.innerHTML=shell();
  window.CruzaTools?.setMode(state.ambientTool);
  document.getElementById('toast-region')?.replaceChildren();
@@ -153,14 +154,7 @@ function render(){if(!state.user){renderLogin();return;}
 function navigate(to){if(!state.user)return;if(!roleMenu[state.user.role].some(([r])=>r===to)){notify('No tienes permisos para entrar en este módulo.');return;}
  state.page=to;state.roleNavigation=false;render();window.scrollTo({top:0,behavior:'instant'});
 }
-const hints={tablero:'Tablero: cada palabra es una ruta de tu vida académica.',pensum:'Pensum: identifica las materias obligatorias, optativas y de libre elección.',
- inscripcion:'Inscripción: compara tu borrador con el horario vigente antes de confirmar.',horario:'Horario: consulta las clases que ya están confirmadas.',
- calendario:'Calendario: rojo es atrasado, naranja pendiente y verde entregado.',agenda:'Mi agenda: tus recordatorios personales no alteran las entregas académicas.',
- notas:'Notas: las calificaciones pendientes no cuentan como cero.',historial:'Historial: para el promedio acumulado se toma el último intento de cada materia.',
- perfil:'Perfil: tus datos académicos y tu identidad.',asistencia:'Asistencia: consulta tus registros o registra asistencia en los grupos autorizados.',
- estudiantes:'Estudiantes: el administrador crea, aprueba y desactiva cuentas.',recuperacion:'Recuperación: restablecer no desbloquea una cuenta automáticamente.',
- catalogo:'Catálogo: cada materia define créditos enteros y sus grupos ofrecidos.',auditoria:'Auditoría: registro de cambios importantes en la aplicación.'};
-function hintFor(page){return hints[page]||'Pista: selecciona un módulo.'}
+// Las ayudas de cada elemento se administran únicamente en cruza-ux.js.
 // Raise the pointed crossword word; other keys settle down without obstructing content.
 function highlightCrosswordPath(target){
   const el=target?.closest?.('.board-tile[data-path], .board-clues [data-route]');
@@ -755,18 +749,7 @@ document.addEventListener('pointerdown',e=>{
  if(e.pointerType!=='mouse'||prefersReduced()||!isFree(e.target))return;
  drawing=true;gesture=[[e.clientX,e.clientY]];
 },{passive:true});
-document.addEventListener('pointerover',e=>{
- const el=document.getElementById('hint');if(!el||el.hidden)return;
- const target=e.target.closest('[data-hint],button,label,input,select,a');
- const hint=target?.dataset?.hint||target?.getAttribute('aria-label')||target?.textContent?.trim().slice(0,86);
- if(hint)el.textContent=`Pista: ${hint}`;
-});
-document.addEventListener('focusin',e=>{
- const el=document.getElementById('hint');if(!el||el.hidden)return;
- const target=e.target.closest('[data-hint],button,input,select,a');
- const hint=target?.dataset?.hint||target?.getAttribute('aria-label')||target?.textContent?.trim().slice(0,86);
- if(hint)el.textContent=`Pista: ${hint}`;
-});
+// Las pistas de cada elemento las administra cruza-ux.js; no duplicar listeners.
 document.addEventListener('pointermove',e=>{
  if(!drawing)return;
  if(e.pointerType!=='mouse'||prefersReduced()||!isFree(e.target)){drawing=false;gesture=[];return;}

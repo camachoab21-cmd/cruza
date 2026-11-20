@@ -93,6 +93,36 @@
     auditoria:'Revisa los registros de cambios importantes.'
   };
   const actionHelp={
+    'find-course':'Encuentra esta asignatura dentro del formulario de inscripción.',
+    'toggle-course':'Añade o quita una materia del borrador de matrícula.',
+    'calendar-day':'Selecciona un día para revisar sus actividades.',
+    'cal-prev-month':'Retrocede un mes en el calendario.',
+    'cal-next-month':'Avanza un mes en el calendario.',
+    'agenda-new':'Crea un recordatorio personal para organizar tus actividades.',
+    'agenda-edit':'Edita la fecha o descripción del recordatorio.',
+    'agenda-delete':'Elimina el recordatorio seleccionado.',
+    'agenda-complete':'Marca la tarea como completada.',
+    'agenda-toggle-done':'Muestra u oculta recordatorios ya completados.',
+    'activity-toggle':'Actualiza el estado de una actividad académica.',
+    'simulate':'Calcula un promedio provisional sin modificar notas oficiales.',
+    'sim-quick':'Aplica un valor de ejemplo a la simulación de notas.',
+    'teacher-group':'Cambia el grupo para consultar o registrar resultados.',
+    'save-grade':'Guarda la calificación registrada para el estudiante autorizado.',
+    'attendance':'Registra asistencia en el grupo y la fecha seleccionados.',
+    'student-new':'Crea una cuenta de estudiante pendiente de aprobación.',
+    'user-status':'Aprueba, desactiva o habilita la cuenta seleccionada.',
+    'issue-recovery':'Emite un código temporal después de verificar identidad.',
+    'course-new':'Registra una asignatura en el catálogo académico.',
+    'group-new':'Agrega un grupo con horario y salón.',
+    'modal-close':'Cierra esta ventana sin guardar cambios adicionales.',
+    'modal-confirm':'Confirma la operación indicada en la ventana.',
+    'copy-code':'Copia el código temporal para entregarlo de forma segura.',
+    'mobile-draft-tab':'Desplázate a la sección elegida del borrador.',
+    recover:'Solicita el proceso asistido de recuperación de acceso.',
+    'demo-info':'Consulta las credenciales ficticias de la demostración.',
+    'password-visibility':'Muestra u oculta los caracteres de tu contraseña.',
+    'demo-month':'Vuelve al mes utilizado para la demostración académica.',
+
     theme:'Alterna los colores y contrastes entre los modos claro y oscuro.',
     tool:'Alterna entre el lápiz fino y el crayón de pigmento artístico.',
     'toggle-hints':'Muestra u oculta esta ayuda contextual.',
@@ -115,12 +145,15 @@
     if(target.id==='auth-user')return 'Escribe tu usuario para ingresar al campus.';
     if(target.id==='auth-pass')return 'Escribe tu contraseña. Los caracteres permanecen ocultos.';
     if(target.matches('select'))return 'Elige una opción de la lista.';
+    if(target.matches('input,textarea'))return target.getAttribute('aria-label')||target.labels?.[0]?.textContent?.trim()||'Completa este campo del formulario.';
+    if(target.matches('label'))return 'Completa el campo indicado antes de continuar.';
     return '';
   }
-  let pointerHelp='',keyboardHelp='';
+  let pointerHelp='',keyboardHelp='',currentDock=null;
   function showHelp(){
     const dock=document.getElementById('hint');
     if(!dock||dock.hidden)return;
+    // Una acción bajo el mouse tiene prioridad sobre el último botón enfocado.
     const message=pointerHelp||keyboardHelp||'';
     if(dock.textContent!==message)dock.textContent=message;
     dock.classList.toggle('has-message',!!message);
@@ -139,7 +172,7 @@
 
   function enhance(){
     const controls=app?.querySelector('.topbar .controls');
-    if(!controls)return;
+    if(!controls){currentDock=null;return;}
     if(!controls.querySelector('[data-font-trigger]')){
       const wrapper=document.createElement('div');
       wrapper.className='cruza-font-controls';
@@ -153,7 +186,10 @@
       if(theme)controls.insertBefore(wrapper,theme);else controls.prepend(wrapper);
     }
     const dock=document.getElementById('hint');
-    if(dock){
+    // Solo reiniciar el panel al cambiar de pantalla. El MutationObserver no debe
+    // borrar los mensajes cada vez que se añade texto dentro del panel.
+    if(dock&&dock!==currentDock){
+      currentDock=dock;
       dock.setAttribute('aria-label','Ayuda contextual');
       dock.setAttribute('role','status');
       dock.textContent='';
