@@ -1,7 +1,16 @@
 @echo off
 setlocal EnableExtensions
 title CRUZA 3 - Actualizar y abrir
-cd /d "%~dp0"
+if exist "%~dp0\.git\HEAD" (
+  cd /d "%~dp0"
+) else (
+  cd /d "%USERPROFILE%\Documents\CRUZA-PUBLICACION"
+)
+if errorlevel 1 (
+  echo ERROR: No se encontro la carpeta del proyecto CRUZA-PUBLICACION.
+  pause
+  exit /b 1
+)
 echo =======================================================
 echo   CRUZA 3 - ACTUALIZACION SEGURA Y APERTURA
 echo =======================================================
@@ -33,7 +42,7 @@ if errorlevel 1 (
   exit /b 1
 )
 echo Guardando cualquier cambio local, sin borrar tu base SQLite...
-git stash push -u -m "Respaldo CRUZA antes de actualizar"
+git stash push -m "Respaldo CRUZA antes de actualizar"
 if errorlevel 1 (
   echo ERROR: No se pudieron guardar los cambios locales. Actualizacion cancelada.
   pause
