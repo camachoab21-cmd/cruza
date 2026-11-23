@@ -88,6 +88,25 @@ with sync_playwright() as pw:
         page.locator('[data-action="theme"]').click()
         second_theme=page.evaluate('document.documentElement.dataset.theme')
         assert first_theme!=second_theme,(first_theme,second_theme)
+        if second_theme=='dark':
+            # Esperar que el navegador termine el cambio de estado visual.
+            page.wait_for_timeout(330)
+            contrast=page.evaluate("""() => {
+              const luminance=(c)=>{
+                const v=(c.match(/[0-9.]+/g)||[]).slice(0,3).map(Number).map(x=>{
+                  const y=x/255;return y<=.04045?y/12.92:((y+.055)/1.055)**2.4;
+                });
+                return .2126*v[0]+.7152*v[1]+.0722*v[2];
+              };
+              const results={};
+              for(const selector of ['[data-action="theme"]','[data-action="tool"]','#content [data-route="inscripcion"]']){
+                const el=document.querySelector(selector),css=getComputedStyle(el);
+                const a=luminance(css.color),b=luminance(css.backgroundColor);
+                results[selector]={ratio:(Math.max(a,b)+.05)/(Math.min(a,b)+.05),text:css.color,bg:css.backgroundColor};
+              }
+              return results;
+            }""")
+            assert min(v['ratio'] for v in contrast.values())>=4.5,contrast
         if width==1440:
             page.screenshot(path=str(OUTPUT/'cruza3-nueva-interfaz-tema-alternativo.png'),full_page=True)
         if width==390:

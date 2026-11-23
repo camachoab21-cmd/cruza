@@ -597,3 +597,87 @@ button:focus-visible,a:focus-visible,[role=button]:focus-visible{outline:3px sol
  .card,.navbtn{transition:none!important}
 }
 @media print{.cruza-expo-panel,.cruza-expo-btn{display:none!important}}
+
+
+/* Revisión sobre capturas reales: contraste oscuro y controles a 390 px. */
+html[data-theme="dark"] .topbar .controls > button:not(.cruza-expo-btn),
+html[data-theme="dark"] .topbar .cruza-font-trigger,
+html[data-theme="dark"] .mobile-menu{
+ background:#2a3b52!important;color:#f4f9ff!important;
+ border-color:#6b829c!important;
+ text-shadow:none;box-shadow:0 4px 12px rgba(0,0,0,.15);
+}
+html[data-theme="dark"] .topbar .controls > button:not(.cruza-expo-btn):hover,
+html[data-theme="dark"] .topbar .cruza-font-trigger:hover,
+html[data-theme="dark"] .mobile-menu:hover{
+ background:#364b67!important;color:#fff!important;border-color:#8aa9ce!important;
+}
+html[data-theme="dark"] .topbar .controls > button.cruza-expo-btn{
+ background:linear-gradient(105deg,#caff9c,#8ee9d8)!important;
+ color:#142b3a!important;border-color:#a0e6d0!important;
+}
+html[data-theme="dark"] .page .pill.lime{
+ background:#c7f384;color:#193323;border-color:#9bd85c;
+}
+html[data-theme="dark"] .page .pill.purple{
+ background:#cdb9fc;color:#28233a;border-color:#baa2f5;
+}
+html[data-theme="dark"] .page .pill.peach{
+ background:#ffd4ad;color:#412b20;border-color:#f3b992;
+}
+html[data-theme="dark"] .page .pill:not(.lime):not(.purple):not(.peach){
+ background:#263e50;color:#f4faff;border-color:#5f8593;
+}
+html[data-theme="dark"] .page .pill.ok{color:#b7ffcc;border-color:#4eab7d}
+html[data-theme="dark"] .page .pill.danger{color:#ffb7b6;border-color:#bf777c}
+html[data-theme="dark"] #content button:not(.btn-primary):not(.btn-lime):not(.btn-danger){
+ color:var(--ink);
+}
+html[data-theme="dark"] #content button:not(.btn-primary):not(.btn-lime):not(.btn-danger):not(.active){
+ background-color:#293a50;border-color:#62758d;color:#f0f6ff;
+}
+html[data-theme="dark"] #content button.btn-primary,
+html[data-theme="dark"] #content button.btn-lime,
+html[data-theme="dark"] #content button.btn-danger{
+ color:inherit;
+}
+html[data-theme="dark"] #content button.btn-primary{color:#fff}
+html[data-theme="dark"] #content button.btn-lime{color:#162c27}
+html[data-theme="dark"] #content button.btn-danger{color:#ffbbbf}
+html[data-theme="dark"] .auth-form-card button.btn-ghost{
+ color:#f3faff;background:#2c4155;border:1px solid #527587;
+}
+html[data-theme="dark"] .auth-form-card button.btn-ghost:hover{
+ background:#3b5670;border-color:#7e9ebe;
+}
+html[data-theme="dark"] .cruza-font-menu button:not([aria-pressed="true"]){
+ background:#304258;color:#f3f8ff;border-color:#5f7894;
+}
+@media(max-width:700px){
+ html[data-theme="dark"] .topbar .name{color:#f4f9ff}
+ html[data-theme="dark"] .topbar .row-left .pill{background:#2b4457;color:#f5f9ff;border-color:#657d95}
+}
+
+
+/* Fijar fondo y tinta reales en botones de navegación del contenido.
+   Algunos estilos heredados quedan como color claro sobre fondo claro. */
+html[data-theme="dark"] #content button:not(.btn-primary):not(.btn-lime):not(.btn-danger):not(.active){
+ background:#2b4058!important;
+ background-image:none!important;
+ color:#f4f9ff!important;
+ border-color:#7892ac!important;
+ text-shadow:none!important;
+}
+html[data-theme="dark"] #content button:not(.btn-primary):not(.btn-lime):not(.btn-danger):not(.active):hover{
+ background:#3b5572!important;color:#fff!important;
+}
+
+
+/* Cambiar tema no debe interpolar tinta blanca sobre papel blanco.
+   Se conserva la animación de elevación, no la interpolación de fondos. */
+html[data-theme] #content button,
+html[data-theme] .topbar button,
+html[data-theme] .cruza-font-trigger{
+ transition-property:transform,box-shadow,border-color!important;
+ transition-duration:.16s!important;
+}
