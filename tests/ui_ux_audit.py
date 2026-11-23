@@ -70,6 +70,16 @@ with sync_playwright() as pw:
         assert page.evaluate("document.body.dataset.module")=='tablero'
         if width==1440:
             assert page.locator('.cruza-version').is_visible()
+        # Recorrido de exposición real: debe abrir, navegar a una ruta permitida y cerrar.
+        page.locator('[data-expo-start]').click()
+        assert page.locator('#cruza-expo-panel').is_visible()
+        assert 'RECORRIDO ACADÉMICO' in page.locator('[data-expo-counter]').inner_text()
+        page.locator('[data-expo-next]').click()
+        assert page.evaluate('state.page')=='pensum','El recorrido debe usar navegación real'
+        assert '2 /' in page.locator('[data-expo-counter]').inner_text()
+        page.locator('[data-expo-close]').click()
+        assert page.locator('#cruza-expo-panel').is_hidden()
+        page.evaluate("state.page='tablero';render()")
         page.mouse.move(0,0)
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+3'),f'Desbordamiento a {width}px'
         first_theme=page.evaluate('document.documentElement.dataset.theme')

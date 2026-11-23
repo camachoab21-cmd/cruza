@@ -126,12 +126,12 @@ function sideBar(){const menu=roleMenu[state.user.role];return `<aside class="si
 function shell(){const title=roleMenu[state.user.role].find(([id])=>id===state.page)?.[1]||'Mi tablero';
  return `<div class="shell">${sideBar()}<main class="workspace"><header class="topbar">
  <div class="row-left">${btn('☰ Menú','menu','btn-mini mobile-menu', 'aria-expanded="false" aria-controls="sidebar"')}
- <strong class="name">${escapeHtml(title)}</strong><span class="pill">PERÍODO 2026-2</span><span class="pill cruza-version" title="Actualización visual 20 de noviembre">CRUZA · EDICIÓN 20.11</span></div>
+ <strong class="name">${escapeHtml(title)}</strong><span class="pill">PERÍODO 2026-2</span><span class="pill cruza-version" title="Versión de exposición 24 de noviembre">CRUZA · EXPO 24.11</span></div>
  <div class="controls">${btn('☀ / ☾','theme','btn-mini','aria-label="Alternar modo día y noche"')}
  ${btn('✎ Lápiz','tool','btn-mini','title="Alternar lápiz y crayón" aria-pressed="false"')}
  ${btn('Ayuda','toggle-hints','btn-mini','aria-pressed="true" aria-label="Mostrar u ocultar la ayuda contextual"')}
  </div></header><aside id="hint" class="hint-bar" role="status" aria-live="polite" aria-label="Ayuda contextual"></aside><div id="content" class="page">${pageContent()}</div>
- <footer class="small muted" style="margin-top:42px;border-top:1px solid var(--line);padding-top:18px">CRUZA · Campus Académico · ${escapeHtml(roleNames[state.user.role])}<span class="cruza-release" aria-label="Edición de CRUZA 20 de noviembre">Edición 20.11</span></footer>
+ <footer class="small muted" style="margin-top:42px;border-top:1px solid var(--line);padding-top:18px">CRUZA · Campus Académico · ${escapeHtml(roleNames[state.user.role])}<span class="cruza-release" aria-label="CRUZA: versión de exposición">Expo 24.11</span></footer>
  </main></div>`}
 function pageContent(){switch(state.user.role){
  case 'student':return ({tablero:dashboard,pensum:curriculum,inscripcion:enrollment,horario:schedule,calendario:calendar,
@@ -723,9 +723,22 @@ document.addEventListener('keydown',e=>{
   else if(!e.shiftKey&&document.activeElement===f.at(-1)){e.preventDefault();f[0].focus()}
  }
 });
+// Un único cálculo por fotograma, sin medir cada tarjeta en cada evento del ratón.
+let cardLightFrame=0,cardLightTarget=null,cardLightX=0,cardLightY=0;
 document.addEventListener('pointermove',e=>{
- const card=e.target.closest('.card');if(!card||e.pointerType!=='mouse')return;
- const r=card.getBoundingClientRect();card.style.setProperty('--mx',`${(e.clientX-r.left)/r.width*100}%`);card.style.setProperty('--my',`${(e.clientY-r.top)/r.height*100}%`);
+ if(e.pointerType!=='mouse'||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ const card=e.target.closest('.card');
+ if(!card)return;
+ cardLightTarget=card;cardLightX=e.clientX;cardLightY=e.clientY;
+ if(cardLightFrame)return;
+ cardLightFrame=requestAnimationFrame(()=>{
+  cardLightFrame=0;
+  if(!cardLightTarget||!cardLightTarget.isConnected)return;
+  const r=cardLightTarget.getBoundingClientRect();
+  if(!r.width||!r.height)return;
+  cardLightTarget.style.setProperty('--mx',((cardLightX-r.left)/r.width*100).toFixed(1)+'%');
+  cardLightTarget.style.setProperty('--my',((cardLightY-r.top)/r.height*100).toFixed(1)+'%');
+ });
 },{passive:true});
 // Day/night preference: entirely local and not a security-sensitive setting.
 function toggleTheme(){const next=document.documentElement.dataset.theme==='dark'?'light':'dark';
