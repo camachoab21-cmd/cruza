@@ -151,6 +151,18 @@
   }
   let pointerHelp='',keyboardHelp='',currentDock=null;
   function showHelp(){
+    if(!controls.querySelector('[data-expo-start]')){
+      const tour=document.createElement('button');
+      tour.type='button';tour.className='cruza-expo-btn';
+      tour.dataset.expoStart='1';
+      tour.setAttribute('aria-label','Iniciar recorrido académico guiado');
+      tour.setAttribute('aria-controls','cruza-expo-panel');
+      tour.setAttribute('aria-expanded',String(expoOpen));
+      tour.title='Recorrido guiado para presentar los módulos';
+      tour.textContent='✦ Recorrido';
+      const theme=controls.querySelector('[data-action="theme"]');
+      if(theme)controls.insertBefore(tour,theme);else controls.prepend(tour);
+    }
     const dock=document.getElementById('hint');
     if(!dock||dock.hidden)return;
     // Una acción bajo el mouse tiene prioridad sobre el último botón enfocado.
@@ -169,6 +181,71 @@
     keyboardHelp=e.relatedTarget instanceof Element?hintForElement(e.relatedTarget):'';
     showHelp();
   });
+
+
+  // Recorrido guiado de exposición: utiliza las rutas verdaderas, no crea pantallas ficticias.
+  let expoSteps=[],expoIndex=0,expoOpen=false;
+  const expoOrder={
+    student:['tablero','pensum','inscripcion','horario','notas','asistencia','perfil'],
+    teacher:['notas','asistencia'],
+    admin:['estudiantes','catalogo','recuperacion','auditoria']
+  };
+  function expoPanel(){
+    let panel=document.getElementById('cruza-expo-panel');
+    if(panel)return panel;
+    panel=document.createElement('aside');
+    panel.id='cruza-expo-panel';
+    panel.className='cruza-expo-panel';
+    panel.setAttribute('role','dialog');
+    panel.setAttribute('aria-modal','false');
+    panel.setAttribute('aria-labelledby','cruza-expo-title');
+    panel.hidden=true;
+    panel.innerHTML='<button type="button" class="expo-close" data-expo-close aria-label="Cerrar recorrido">×</button>'+
+      '<div class="expo-eyebrow" data-expo-counter></div>'+
+      '<h2 id="cruza-expo-title"></h2>'+
+      '<p data-expo-desc></p>'+
+      '<div class="expo-progress" aria-hidden="true"><span data-expo-bar></span></div>'+
+      '<div class="expo-actions"><button type="button" data-expo-back>← Anterior</button>'+
+      '<button type="button" data-expo-next>Siguiente →</button></div>';
+    document.body.appendChild(panel);
+    return panel;
+  }
+  function closeExpo(){
+    expoOpen=false;
+    const panel=document.getElementById('cruza-expo-panel');
+    if(panel)panel.hidden=true;
+    document.querySelector('[data-expo-start]')?.setAttribute('aria-expanded','false');
+  }
+  function expoMove(stepIndex){
+    if(!expoSteps.length)return closeExpo();
+    expoIndex=Math.max(0,Math.min(expoSteps.length-1,stepIndex));
+    const step=expoSteps[expoIndex],panel=expoPanel();
+    const nav=document.querySelector('.sidebar [data-action="route"][data-route="'+step.id+'"]');
+    if(nav&&nav.getAttribute('aria-current')!=='page')nav.click();
+    panel.querySelector('[data-expo-counter]').textContent='RECORRIDO ACADÉMICO · '+(expoIndex+1)+' / '+expoSteps.length;
+    panel.querySelector('#cruza-expo-title').textContent=step.name;
+    panel.querySelector('[data-expo-desc]').textContent=routeHelp[step.id]||'Explora este apartado del campus académico.';
+    panel.querySelector('[data-expo-bar]').style.setProperty('--expo-pct',((expoIndex+1)/expoSteps.length*100)+'%');
+    panel.querySelector('[data-expo-back]').disabled=expoIndex===0;
+    panel.querySelector('[data-expo-next]').textContent=expoIndex===expoSteps.length-1?'Finalizar ✓':'Siguiente →';
+    panel.hidden=false;
+    document.querySelector('[data-expo-start]')?.setAttribute('aria-expanded','true');
+  }
+  function startExpo(){
+    if(expoOpen){closeExpo();return;}
+    const role=document.querySelector('.sidebar .eyebrow')?.textContent?.trim()?.toLowerCase()||'';
+    const type=role.includes('docente')?'teacher':role.includes('administrador')?'admin':'student';
+    const buttons=[...document.querySelectorAll('.sidebar nav [data-action="route"][data-route]')];
+    const allowed=expoOrder[type];
+    expoSteps=allowed.map(id=>{
+      const button=buttons.find(el=>el.dataset.route===id);
+      return button?{id,name:button.getAttribute('aria-label')||button.textContent.trim()}:null;
+    }).filter(Boolean);
+    if(!expoSteps.length)return;
+    expoOpen=true;
+    expoMove(0);
+    expoPanel().querySelector('[data-expo-next]')?.focus();
+  }
 
   function enhance(){
     const controls=app?.querySelector('.topbar .controls');
@@ -205,6 +282,10 @@
     if(trigger)trigger.setAttribute('aria-expanded','false');
   }
   document.addEventListener('click',e=>{
+    if(e.target.closest('[data-expo-start]')){startExpo();return;}
+    if(e.target.closest('[data-expo-close]')){closeExpo();return;}
+    if(e.target.closest('[data-expo-next]')){if(expoIndex>=expoSteps.length-1)closeExpo();else expoMove(expoIndex+1);return;}
+    if(e.target.closest('[data-expo-back]')){expoMove(expoIndex-1);return;}
     const trigger=e.target.closest('[data-font-trigger]');
     if(trigger){
       const menu=document.querySelector('[data-font-menu]');
@@ -219,7 +300,7 @@
     if(!e.target.closest('.cruza-font-controls'))closeMenu();
   });
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape')closeMenu();
+    if(e.key==='Escape'){closeMenu();closeExpo();}
   });
   if(app){
     new MutationObserver(enhance).observe(app,{childList:true});
@@ -242,5 +323,5 @@
       glowTarget.style.setProperty('--glow-py',(glowY-rect.top).toFixed(1)+'px');
     });
   },{passive:true});
-  window.CruzaUX={fontScale,refreshTiles,debug:()=>({scale:Number(html.dataset.fontScale||1),help:document.getElementById('hint')?.textContent||'',menuOpen:!document.querySelector('[data-font-menu]')?.hidden})};
+  window.CruzaUX={fontScale,refreshTiles,startExpo,debug:()=>({scale:Number(html.dataset.fontScale||1),help:document.getElementById('hint')?.textContent||'',menuOpen:!document.querySelector('[data-font-menu]')?.hidden,tourOpen:expoOpen,tourStep:expoIndex+1})};
 })();
