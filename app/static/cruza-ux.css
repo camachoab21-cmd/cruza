@@ -657,3 +657,17 @@ html[data-theme="dark"] .cruza-font-menu button:not([aria-pressed="true"]){
  html[data-theme="dark"] .topbar .name{color:#f4f9ff}
  html[data-theme="dark"] .topbar .row-left .pill{background:#2b4457;color:#f5f9ff;border-color:#657d95}
 }
+
+
+/* Fijar fondo y tinta reales en botones de navegación del contenido.
+   Algunos estilos heredados quedan como color claro sobre fondo claro. */
+html[data-theme="dark"] #content button:not(.btn-primary):not(.btn-lime):not(.btn-danger):not(.active){
+ background:#2b4058!important;
+ background-image:none!important;
+ color:#f4f9ff!important;
+ border-color:#7892ac!important;
+ text-shadow:none!important;
+}
+html[data-theme="dark"] #content button:not(.btn-primary):not(.btn-lime):not(.btn-danger):not(.active):hover{
+ background:#3b5572!important;color:#fff!important;
+}
