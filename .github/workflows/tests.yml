@@ -45,6 +45,31 @@ jobs:
         run: python tests/ui_actions_audit.py
       - name: Probar escritura fluida, ayuda y controles tipográficos
         run: python tests/ui_ux_audit.py
+      - name: Construir paquete offline para Windows
+        run: |
+          python scripts/build_expo_package.py
+          python - <<'PY'
+          from zipfile import ZipFile
+          from pathlib import Path
+          package=Path('dist/CRUZA3-EXPOSICION-24NOV.zip')
+          assert package.is_file() and package.stat().st_size > 100000
+          with ZipFile(package) as z:
+              names=z.namelist()
+              assert z.testzip() is None
+              assert 'CRUZA3-EXPOSICION/ABRIR-CRUZA.bat' in names
+              assert 'CRUZA3-EXPOSICION/app/main.py' in names
+              assert 'CRUZA3-EXPOSICION/app/templates/index.html' in names
+              assert 'CRUZA3-EXPOSICION/docs/EXPOSICION-24NOV-2026.md' in names
+              assert not any('/data/' in n or n.endswith(('.db','.sqlite3','.env')) for n in names)
+              print('ZIP listo: archivos de aplicación y documentación sin base privada')
+          PY
+      - name: Publicar copia descargable de CRUZA 3
+        uses: actions/upload-artifact@v4
+        with:
+          name: CRUZA3-EXPOSICION-24NOV
+          path: dist/CRUZA3-EXPOSICION-24NOV.zip
+          if-no-files-found: error
+          retention-days: 14
       - name: Guardar capturas e informes de auditoría
         if: always()
         uses: actions/upload-artifact@v4
