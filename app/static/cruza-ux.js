@@ -151,18 +151,6 @@
   }
   let pointerHelp='',keyboardHelp='',currentDock=null;
   function showHelp(){
-    if(!controls.querySelector('[data-expo-start]')){
-      const tour=document.createElement('button');
-      tour.type='button';tour.className='cruza-expo-btn';
-      tour.dataset.expoStart='1';
-      tour.setAttribute('aria-label','Iniciar recorrido académico guiado');
-      tour.setAttribute('aria-controls','cruza-expo-panel');
-      tour.setAttribute('aria-expanded',String(expoOpen));
-      tour.title='Recorrido guiado para presentar los módulos';
-      tour.textContent='✦ Recorrido';
-      const theme=controls.querySelector('[data-action="theme"]');
-      if(theme)controls.insertBefore(tour,theme);else controls.prepend(tour);
-    }
     const dock=document.getElementById('hint');
     if(!dock||dock.hidden)return;
     // Una acción bajo el mouse tiene prioridad sobre el último botón enfocado.
@@ -261,6 +249,18 @@
         '</div>';
       const theme=controls.querySelector('[data-action="theme"]');
       if(theme)controls.insertBefore(wrapper,theme);else controls.prepend(wrapper);
+    }
+    if(!controls.querySelector('[data-expo-start]')){
+      const tour=document.createElement('button');
+      tour.type='button';tour.className='cruza-expo-btn';
+      tour.dataset.expoStart='1';
+      tour.setAttribute('aria-label','Iniciar recorrido académico guiado');
+      tour.setAttribute('aria-controls','cruza-expo-panel');
+      tour.setAttribute('aria-expanded',String(expoOpen));
+      tour.title='Recorrido guiado para presentar los módulos';
+      tour.textContent='✦ Recorrido';
+      const theme=controls.querySelector('[data-action="theme"]');
+      if(theme)controls.insertBefore(tour,theme);else controls.prepend(tour);
     }
     const dock=document.getElementById('hint');
     // Solo reiniciar el panel al cambiar de pantalla. El MutationObserver no debe
