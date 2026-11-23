@@ -671,3 +671,13 @@ html[data-theme="dark"] #content button:not(.btn-primary):not(.btn-lime):not(.bt
 html[data-theme="dark"] #content button:not(.btn-primary):not(.btn-lime):not(.btn-danger):not(.active):hover{
  background:#3b5572!important;color:#fff!important;
 }
+
+
+/* Cambiar tema no debe interpolar tinta blanca sobre papel blanco.
+   Se conserva la animación de elevación, no la interpolación de fondos. */
+html[data-theme] #content button,
+html[data-theme] .topbar button,
+html[data-theme] .cruza-font-trigger{
+ transition-property:transform,box-shadow,border-color!important;
+ transition-duration:.16s!important;
+}
