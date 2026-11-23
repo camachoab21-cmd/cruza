@@ -88,6 +88,13 @@ with sync_playwright() as pw:
         page.locator('[data-action="theme"]').click()
         second_theme=page.evaluate('document.documentElement.dataset.theme')
         assert first_theme!=second_theme,(first_theme,second_theme)
+        # La confirmación no debe cubrir las pistas contextuales inferiores.
+        if page.locator('.toast').count() and page.locator('#hint').is_visible():
+            toast=page.locator('.toast').first.bounding_box()
+            hint=page.locator('#hint').bounding_box()
+            overlap_x=toast['x']<hint['x']+hint['width'] and toast['x']+toast['width']>hint['x']
+            overlap_y=toast['y']<hint['y']+hint['height'] and toast['y']+toast['height']>hint['y']
+            assert not(overlap_x and overlap_y),(toast,hint,'Notificación solapada')
         if second_theme=='dark':
             # Esperar que el navegador termine el cambio de estado visual.
             page.wait_for_timeout(330)

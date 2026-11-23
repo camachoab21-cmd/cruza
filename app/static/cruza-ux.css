@@ -681,3 +681,17 @@ html[data-theme] .cruza-font-trigger{
  transition-property:transform,box-shadow,border-color!important;
  transition-duration:.16s!important;
 }
+
+
+/* La confirmación temporal debe aparecer sobre la ayuda inferior,
+   nunca taparla en móvil ni en escritorio. */
+.toast-region{
+ bottom:calc(100px + env(safe-area-inset-bottom))!important;
+ right:clamp(12px,2.5vw,30px)!important;
+ z-index:72;
+ max-width:min(360px,calc(100vw - 24px));
+}
+@media(max-width:700px){
+ .toast-region{bottom:calc(108px + env(safe-area-inset-bottom))!important}
+ .toast{padding:11px 14px;font-size:.82rem;border-radius:13px}
+}
