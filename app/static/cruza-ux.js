@@ -237,19 +237,21 @@
 
   function enhance(){
     const controls=app?.querySelector('.topbar .controls');
-    if(!controls){currentDock=null;return;}
-    if(!controls.querySelector('[data-font-trigger]')){
+    const fontHost=controls||app?.querySelector('.auth-form-card');
+    if(!fontHost){currentDock=null;return;}
+    if(!fontHost.querySelector('[data-font-trigger]')){
       const wrapper=document.createElement('div');
       wrapper.className='cruza-font-controls';
-      wrapper.innerHTML='<button type="button" class="btn-mini cruza-font-trigger" data-font-trigger aria-label="Ajustar tamaño de letra" aria-haspopup="true" aria-expanded="false" title="Tamaño de letra">A<span aria-hidden="true">±</span></button>'+
+      wrapper.innerHTML='<button type="button" class="btn-mini cruza-font-trigger" data-font-trigger aria-label="Ajustar tamaño de letra" aria-haspopup="true" aria-expanded="false" title="Tamaño de letra">A<span aria-hidden="true">±</span><span class="cruza-font-caption"> Letra</span></button>'+
         '<div class="cruza-font-menu" data-font-menu hidden role="group" aria-label="Tamaño de letra">'+
         '<button type="button" data-font-choice="0.85" aria-label="Disminuir tamaño de letra">A−</button>'+
         '<button type="button" data-font-choice="1" aria-label="Tamaño de letra normal">A</button>'+
         '<button type="button" data-font-choice="1.25" aria-label="Aumentar tamaño de letra">A+</button>'+
         '</div>';
-      const theme=controls.querySelector('[data-action="theme"]');
-      if(theme)controls.insertBefore(wrapper,theme);else controls.prepend(wrapper);
+      const theme=fontHost.querySelector('[data-action="theme"]');
+      if(theme)fontHost.insertBefore(wrapper,theme);else fontHost.prepend(wrapper);
     }
+    if(!controls){currentDock=null;fontScale(savedScale());return;}
     if(!controls.querySelector('[data-expo-start]')){
       const tour=document.createElement('button');
       tour.type='button';tour.className='cruza-expo-btn';

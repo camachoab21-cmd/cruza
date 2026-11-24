@@ -1,0 +1,19 @@
+:root { color-scheme: dark; font: 112.5%/1.5 system-ui, sans-serif; }
+body { margin: 0; min-height: 100vh; color: #f8f5ff; background: radial-gradient(ellipse at 10% 0%, #38225e, #15112c 65%); }
+main { max-inline-size: 52rem; margin: auto; padding: clamp(1rem, 5vw, 3rem); }
+h1 { font-size: clamp(2rem, 6vw, 3.5rem); line-height: 1.05; margin-block-end: .4em; }
+h2 { font-size: 1.3rem; }
+a { color: #d3ff92; font-weight: 750; }
+.game { display: flex; flex-wrap: wrap; align-items: start; gap: 1rem 2rem; margin-block: 1.5rem; }
+.game section { flex: 1 1 13rem; }
+#grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .28rem; width: min(100%, 16rem); }
+#grid > div { position: relative; aspect-ratio: 1; }
+#grid .blank { border-radius: .4rem; background: #131023; }
+#grid span { position: absolute; inset: .05rem auto auto .3rem; font-size: .65rem; color: #543584; pointer-events: none; }
+input { box-sizing: border-box; width: 100%; height: 100%; padding: .35rem 0 0; border: 2px solid transparent; border-radius: .4rem; background: #f6e7ff; color: #241443; text-align: center; font: 800 1.25rem system-ui; }
+input[aria-invalid="true"] { border-color: #963343; background: #ffccd4; }
+button { padding: .65rem 1rem; border: 0; border-radius: .55rem; color: #211534; background: #d3ff92; font: 750 1rem system-ui; cursor: pointer; }
+button[type="reset"] { background: #e5c9ff; }
+.actions { display: flex; flex-wrap: wrap; gap: .55rem; }
+:focus-visible { outline: 3px solid #ffcf6f; outline-offset: 3px; }
+#result { min-height: 1.5em; color: #d3ff92; font-weight: 750; }
