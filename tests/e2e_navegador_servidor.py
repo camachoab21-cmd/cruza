@@ -65,7 +65,10 @@ def main():
     def logout():
      page.locator('.sidebar [data-action="logout"]').click()
      try:
-      page.wait_for_selector('#auth-user',timeout=35000)
+      # El campo de login es transparente y se dibuja mediante casillas
+      # superpuestas; la prueba debe esperar que exista en el DOM.
+      page.wait_for_selector('#auth-user',state='attached',timeout=20000)
+      assert page.evaluate('state.user === null'),'La sesión sigue activa tras logout'
      except Exception as exc:
       details={
        'last_api_calls':api_calls[-8:],
@@ -73,6 +76,8 @@ def main():
        'notification':page.locator('.toast').all_text_contents(),
        'user':page.evaluate("state.user?.username||null"),
        'csrf_present':page.evaluate("Boolean(state.csrf)"),
+       'login_node_count':page.locator('#auth-user').count(),
+       'page_markup':page.locator('#app').inner_html()[:550],
       }
       raise AssertionError(f'El cierre de sesión no abrió el acceso: {details}') from exc
     login('ESTUDIANTE','CRUZA2026');route('pensum');assert page.locator('.page-heading').is_visible()
