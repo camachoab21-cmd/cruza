@@ -2,7 +2,7 @@
 
 **Repositorio oficial:** https://github.com/camachoab21-cmd/cruza  
 **Rama estable:** `main`  
-**Punto de partida verificado:** commit `173c639c` (PR #7 integrado).  
+**Último cambio identificado en `main`:** `2525573f` (autor: Isfrant; cambios visuales y de reglas académicas). **Última base con CI integral aprobada:** `173c639c` (PR #7). El commit nuevo todavía requiere revisión y pruebas.  
 **Exposición:** 24 de noviembre de 2026.  
 **Colaborador `ISFRANT`:** permiso `write` verificado en GitHub el 23 de noviembre.
 
@@ -22,12 +22,14 @@
 | Evidencia visual | Artefacto del workflow y capturas históricas en `docs/capturas/` | En GitHub/Actions |
 | Configuración futura de hosting | `render.yaml`, `docs/DOMINIO-TK-DESPLIEGUE.md` | Preparada, NO desplegada |
 
-**Pruebas aprobadas:** [GitHub Actions — ejecución #78](https://github.com/camachoab21-cmd/cruza/actions/runs/45255955201) (21 pasos, 0 fallos). Incluye tests Python, API/roles, SQLite aislado, Playwright, pantallas responsive, lápiz/crayón y verificación del paquete ZIP.
+**Pruebas de la base anterior (`173c639c`), NO del commit nuevo `2525573f`:** [GitHub Actions — ejecución #78](https://github.com/camachoab21-cmd/cruza/actions/runs/45255955201) (21 pasos, 0 fallos). Incluye tests Python, API/roles, SQLite aislado, Playwright, pantallas responsive, lápiz/crayón y verificación del paquete ZIP.
 
 **Descargas desde GitHub Actions:**
 
 - [Paquete completo Windows — CRUZA3-EXPOSICION-24NOV](https://github.com/camachoab21-cmd/cruza/actions/runs/45255955201/artifacts/14858527019), ZIP dentro del artefacto. GitHub lo conserva hasta el **7 de diciembre de 2026** (puede requerir iniciar sesión).
 - [Auditoría visual — pantallas de estudiante, docente y administrador](https://github.com/camachoab21-cmd/cruza/actions/runs/45255955201/artifacts/14859420570), vigente hasta el **21 de febrero de 2027**, según la fecha de expiración informada por GitHub.
+
+**Cambio concurrente que no se debe sobrescribir:** Isfrant publicó el commit [`2525573f`](https://github.com/camachoab21-cmd/cruza/commit/2525573f4b10ba9ba637b7584783532efa78dd62), modificando notas/evaluaciones (60/30/10), cortes (33/33/34), trazos, interfaz, matrícula y exportación de horario. **No dar esas ponderaciones por oficiales sin verificar requisitos y pruebas.** Se detectó además una intermitencia del logout en CI, documentada en [Issue #10](https://github.com/camachoab21-cmd/cruza/issues/10); el backend devuelve HTTP 200 y la sesión se invalida, pero en Chromium el formulario no reaparece algunas veces. La causa aún no está resuelta.
 
 **Importante:** la carpeta local `C:\Users\camac\Documents\CRUZA-PUBLICACION` NO se sincroniza automáticamente. Los cambios que solo estén en ese Windows y no se hayan confirmado/subido a GitHub no pueden verificarse desde este repositorio. Antes de fusionarlos, comparar por archivo y guardar respaldos.
 
@@ -64,7 +66,7 @@ Priorizar cambios pequeños que se puedan probar y revertir antes de la exposici
 - [ ] Si se encuentra un fallo, documentar pasos para reproducirlo, captura y consola; arreglarlo en una rama propia y pasar pruebas.
 - [ ] Mantener como tarea separada cualquier futuro despliegue de FastAPI con HTTPS/SQLite persistente. **No afirmar que el dominio .tk ya funciona.**
 
-**No es necesario rediseñar desde cero**: la edición Expo 24.11 ya incluye los cambios visuales y tiene pruebas de regresión aprobadas.
+**No es necesario rediseñar desde cero**: la edición Expo 24.11 tiene una base probada; verificar primero el nuevo commit `2525573f`, y no volver a cambiar pesos de notas sin consenso del equipo.
 
 ## 4. Cómo colaborar sin pisar avances
 
