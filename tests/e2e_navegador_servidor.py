@@ -46,9 +46,15 @@ def main():
     page.locator('[data-font-trigger]').click()
     page.locator('[data-font-choice="1"]').click()
     def login(name,pwd):
-     page.locator('#auth-user').fill(name);page.locator('#auth-pass').fill(pwd);page.locator('#login-button').click();page.wait_for_selector('.sidebar',timeout=14000)
-    def route(key):page.locator(f'.sidebar [data-route="{key}"]').click()
+     page.locator('#auth-user').fill(name);page.locator('#auth-pass').fill(pwd);page.locator('#login-button').click();page.wait_for_selector('.sidebar',state='attached',timeout=14000)
+    def open_nav():
+     if page.evaluate("state.user.role==='student'"):
+      if page.locator('[data-action="return-board"]').count():page.locator('[data-action="return-board"]').click()
+      page.locator('[data-path="tablero"]').first.click()
+     else:page.locator('[data-action="menu"]').click()
+    def route(key):open_nav();page.locator(f'.sidebar [data-route="{key}"]').click()
     def logout():
+     open_nav()
      with page.expect_response(lambda r: r.url == base+'/api/logout' and r.request.method == 'POST') as response:
       page.locator('.sidebar [data-action="logout"]').click()
      assert response.value.ok
@@ -96,7 +102,7 @@ def main():
     page.locator('[data-action="modal-confirm"]').click()
     wait_for_state(page, 'state.data.users.some(u=>u.username==="PRUEBAWEB"&&u.status==="active")')
     logout();login('PRUEBAWEB','ClaveLargaCorrecta2026PorSeguridad')
-    assert page.locator('.sidebar').is_visible()
+    assert page.locator('.board-map').is_visible()
     logout()
     assert not errors,errors
     wait_for_state(page, 'Boolean(navigator.serviceWorker.controller)')

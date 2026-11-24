@@ -12,6 +12,7 @@ const roleMenu={student:[['tablero','Mi tablero'],['pensum','Pensum'],['inscripc
  admin:[['estudiantes','Estudiantes'],['recuperacion','Recuperación'],['catalogo','Catálogo'],['auditoria','Auditoría']]};
 const roleNames={student:'Estudiante',teacher:'Docente',admin:'Administrador'};
 const shortDay=['Lun','Mar','Mie','Jue','Vie','Sab'];
+const displayDay=day=>({Mie:'Mié',Sab:'Sáb'}[day]||day);
 const escapeHtml=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const number=v=>v===null||v===undefined?'—':Number(v).toFixed(2).replace('.',',');
 const notify=(message,kind='info')=>{
@@ -117,7 +118,7 @@ async function boot(){try{const data=await api('/session');state.user=data.user;
  <a class="btn-ghost" href="/">Reintentar</a></div>`}}
 async function reloadData(){if(!state.user){renderLogin();return;}
  state.data=await api(state.user.role==='student'?'/student':state.user.role==='teacher'?'/teacher':'/admin');render();}
-function sideBar(){const menu=roleMenu[state.user.role];return `<aside class="sidebar" id="sidebar">${brand()}<div>
+function sideBar(){const menu=roleMenu[state.user.role];return `<aside class="sidebar" id="sidebar" inert>${brand()}<div>
  <div class="eyebrow" style="margin:0 0 14px">${escapeHtml(roleNames[state.user.role])} / SECCIONES</div><nav aria-label="Secciones del campus">
  ${menu.map(([key,text],i)=>`<button class="navbtn ${state.page===key?'active':''}" data-action="route" data-route="${key}" aria-label="${escapeHtml(text)}" aria-current="${state.page===key?'page':'false'}">
  <span class="mon">${String(i+1).padStart(2,'0')}</span><span>${text}</span></button>`).join('')}</nav></div>
@@ -126,10 +127,9 @@ function sideBar(){const menu=roleMenu[state.user.role];return `<aside class="si
  ${btn('Cerrar sesión','logout','btn-mini btn-wide','style="margin-top:13px"')}</div></aside>`}
 function shell(){const title=roleMenu[state.user.role].find(([id])=>id===state.page)?.[1]||'Mi tablero';
  return `<div class="shell">${sideBar()}<main class="workspace"><header class="topbar">
- <div class="row-left">${btn('☰ Menú','menu','btn-mini mobile-menu', 'aria-expanded="false" aria-controls="sidebar"')}
+ <div class="row-left">${state.user.role==='student'?(state.page==='tablero'?'':btn('← Volver al tablero','return-board','btn-mini')):btn('☰ Menú','menu','btn-mini mobile-menu', 'aria-expanded="false" aria-controls="sidebar"')}
  <strong class="name">${escapeHtml(title)}</strong><span class="pill">PERÍODO 2026-2</span><span class="pill cruza-version" title="Versión de exposición 24 de noviembre">CRUZA · EXPO 24.11</span></div>
  <div class="controls">${btn('☀ / ☾','theme','btn-mini','aria-label="Alternar modo día y noche"')}
- ${btn('✎ Lápiz','tool','btn-mini','title="Alternar lápiz y crayón" aria-pressed="false"')}
  ${btn('Ayuda','toggle-hints','btn-mini','aria-pressed="true" aria-label="Mostrar u ocultar la ayuda contextual"')}
  </div></header><aside id="hint" class="hint-bar" role="status" aria-live="polite" aria-label="Ayuda contextual"></aside><div id="content" class="page">${pageContent()}</div>
  <footer class="small muted" style="margin-top:42px;border-top:1px solid var(--line);padding-top:18px">CRUZA · Campus Académico · ${escapeHtml(roleNames[state.user.role])}<span class="cruza-release" aria-label="CRUZA: versión de exposición">Expo 24.11</span></footer>
@@ -144,7 +144,6 @@ function render(){if(!state.user){renderLogin();return;}
  if(!roleMenu[state.user.role].some(([r])=>r===state.page))state.page=roleMenu[state.user.role][0][0];
  document.body.dataset.module=state.page;
  root.innerHTML=shell();
- window.CruzaTools?.setMode(state.ambientTool);
  document.getElementById('toast-region')?.replaceChildren();
  const hintsDisabled=localStorage.getItem('cruza-hints')==='0';
  const ribbon=document.getElementById('hint');if(ribbon)ribbon.hidden=hintsDisabled;
@@ -155,6 +154,9 @@ function render(){if(!state.user){renderLogin();return;}
 function navigate(to){if(!state.user)return;if(!roleMenu[state.user.role].some(([r])=>r===to)){notify('No tienes permisos para entrar en este módulo.');return;}
  state.page=to;state.roleNavigation=false;render();window.scrollTo({top:0,behavior:'instant'});
 }
+let menuTimer=0,menuOpener=null;
+function closeMenu(){const side=document.querySelector('.sidebar');if(!side)return;side.classList.remove('open');side.setAttribute('inert','');document.querySelector('[data-action="menu"]')?.setAttribute('aria-expanded','false');clearTimeout(menuTimer);}
+function openMenu(opener){const side=document.querySelector('.sidebar');if(!side)return;menuOpener=opener||document.activeElement;side.removeAttribute('inert');side.classList.add('open');document.querySelector('[data-action="menu"]')?.setAttribute('aria-expanded','true');clearTimeout(menuTimer);menuTimer=setTimeout(function dismiss(){if(side.matches(':hover')||side.contains(document.activeElement)){menuTimer=setTimeout(dismiss,2000);return}closeMenu()},7000);}
 // Las ayudas de cada elemento se administran únicamente en cruza-ux.js.
 // Raise the pointed crossword word; other keys settle down without obstructing content.
 function highlightCrosswordPath(target){
@@ -162,8 +164,10 @@ function highlightCrosswordPath(target){
   const board=el?.closest('.board');if(!board)return;
   const route=el.dataset.route||(el.dataset.path||'').split('|')[0];
   if(!route)return;
+  let pathIndex=0;
   board.querySelectorAll('.board-tile[data-path]').forEach(cell=>{
     const active=(cell.dataset.path||'').split('|').includes(route);
+    cell.style.setProperty('--path-delay',`${(active?pathIndex++:Number(cell.style.getPropertyValue('--tile-i'))%5)*45}ms`);
     cell.classList.toggle('is-path',active);
     cell.classList.toggle('is-floor',!active);
   });
@@ -199,14 +203,14 @@ function crossword(){const grid=new Map(),words=[
  ${Array.from({length:63},(_,i)=>{const r=Math.floor(i/9),c=i%9,cell=grid.get(`${r}-${c}`);
   return cell?`<button type="button" class="board-tile tone-${cell.tone}" data-number="${cell.number??''}" style="--tile-i:${i}" data-action="word" data-path="${cell.routes.join('|')}" data-hint="Casilla ${cell.letter}: ${cell.routes.join(', ')}" aria-label="Letra ${cell.letter}; ${cell.routes.join(' o ')}"><span class="tile-face">${cell.number!==null?`<span class="tile-number" aria-hidden="true">${cell.number}</span>`:'' }${cell.letter}</span></button>`:'<span class="board-tile void" aria-hidden="true"></span>'}).join('')}</div><div class="map-pencil" aria-hidden="true"><svg viewBox="0 0 94 136" xmlns="http://www.w3.org/2000/svg"><g transform="rotate(28 48 68)"><path d="M31 20 Q31 12 39 12 L57 12 Q64 12 64 20 L64 94 L48 126 L31 94 Z" fill="#f1a95e" stroke="#746b4b" stroke-width="2"/><path d="M39 12 L39 98 L48 126 L31 94 L31 20 Q31 12 39 12" fill="#f6d280"/><path d="M56 12 L56 98 L48 126 L64 94 L64 20 Q64 12 56 12" fill="#da9a62"/><path d="M31 92 L48 126 L64 92" fill="#e9cc9f" stroke="#92785b" stroke-width="2"/><path d="M43 116 L48 126 L53 116" fill="#343f37"/><rect x="31" y="12" width="33" height="15" rx="5" fill="#d8b5ef" stroke="#9980b2" stroke-width="2"/><path d="M31 29 H64" stroke="#ba915b" stroke-width="2"/></g></svg></div></div>
  <footer class="map-footer"><span>Explora una palabra para ver su ruta</span><span class="map-arrow" aria-hidden="true">↗</span></footer><canvas id="powder" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0"></canvas></section>`}
-function dashboard(){const d=state.data;const courses=d.draft.confirmed;const next=courses[0];
+function dashboard(){const d=state.data;const courses=d.draft.confirmed;const next=courses[0];const pending=d.agenda.filter(x=>!x.done).length;
  return head('01 · HORIZONTAL','Tu semestre. <em>Todas las piezas.</em>',`Hola, ${escapeHtml(state.user.full_name)}. Cada palabra te guía al siguiente paso en el tablero.`,linkRoute('Matricular materias ↗','inscripcion','btn-primary'))+
  `${crossword()}<section class="card dashboard-status">
  <div class="eyebrow">ESTADO ACTUAL</div><h2>Una palabra a la vez.</h2>
  <p class="muted">Las conexiones también se construyen con pequeños avances.</p>
- <div class="list"><div class="item"><strong>Próxima clase</strong><span>${next?escapeHtml(next.name):'Sin materias'}</span></div>
+ <div class="list"><div class="item"><strong>Materia inscrita</strong><span>${next?escapeHtml(next.name):'Sin materias'}</span></div>
  <div class="item"><strong>Materias vigentes</strong><span>${courses.length}</span></div>
- <div class="item"><strong>Agenda</strong><span>${d.agenda.filter(x=>!x.done).length} pendientes</span></div></div>
+ <div class="item"><strong>Agenda</strong><span>${pending} ${pending===1?'pendiente':'pendientes'}</span></div></div>
  <div class="actions">${linkRoute('Abrir horario ↗','horario','btn-lime')}${linkRoute('Ver agenda','agenda')}</div></section>
  <div class="stats">${stat('CRÉDITOS INSCRITOS',d.summary.credits_current,'Créditos enteros')}
  ${stat('PROMEDIO ACUMULADO',number(d.summary.papa),'Promedio ponderado acumulado','purple')}
@@ -226,15 +230,16 @@ function timeGrid(groups,confirmed=[],compact=false){const all=[...groups,...con
  const issues=conflictsFor(groups);const conflictIds=new Set(issues.flatMap(x=>[x.a,x.b]));const currentIds=new Set(confirmed.map(x=>x.group_id||x.id));
  const rows=['08:00','10:00','12:00','14:00','16:00','18:00'];
  let html=`<div class="${compact?'table-fit':'table-scroll'}"><table class="schedule-table ${compact?'compact':''}"><thead><tr><th>HORA</th>`+
- shortDay.slice(0,5).map(day=>`<th>${day}</th>`).join('')+'</tr></thead><tbody>';
+ shortDay.slice(0,5).map(day=>`<th>${displayDay(day)}</th>`).join('')+'</tr></thead><tbody>';
  for(const hour of rows){html+=`<tr><th>${hour}</th>`;for(const day of shortDay.slice(0,5)){
  const events=all.filter(g=>g.sessions.some(s=>s.day===day&&s.start<=hour&&s.end>hour));
  html+=`<td>${events.map(g=>{
   const inNew=groups.includes(g),old=confirmed.some(x=>x.course_id===g.course_id&&(x.group_id||x.id)===g.id);
   const type=inNew?(old?'':'add'):'remove';
-  return `<div class="class-block ${type} ${inNew&&conflictIds.has(g.id)?'conflict':''}">
+  const tag=compact?'div':'button';const detail=compact?'':` type="button" data-action="class-detail" data-group-id="${Number(g.id)}" aria-label="Ver detalles de ${escapeHtml(g.name)}, grupo ${escapeHtml(g.code)}"`;
+  return `<${tag} class="class-block ${type} ${inNew&&conflictIds.has(g.id)?'conflict':''}"${detail}>
    <strong>${escapeHtml(g.name)}</strong><span>${escapeHtml(g.code)} · ${escapeHtml(g.room)}</span>
-   <span>${escapeHtml(g.sessions.find(s=>s.day===day&&s.start<=hour&&s.end>hour)?.start||'')}</span></div>`}).join('')}</td>`}
+   <span>${escapeHtml(g.sessions.find(s=>s.day===day&&s.start<=hour&&s.end>hour)?.start||'')}</span></${tag}>`}).join('')}</td>`}
  html+='</tr>'}
  html+='</tbody></table></div>';return html;
 }
@@ -256,7 +261,7 @@ function enrollment(){const d=state.data,selected=d.draft.selected;let courses=d
  <h3>${escapeHtml(c.name)}</h3></div>${labelTag(`${c.credits} créditos`,'lime')}</div>
  <div class="row-left">${labelTag(c.category,tagCat(c.category))}${chosen?labelTag('En borrador','ok'):''}</div>
  ${gs.length?`<div class="field"><label for="grp-${c.id}">Grupo y horario asignado</label><select id="grp-${c.id}" data-course-id="${c.id}">
- ${gs.map(g=>`<option value="${g.id}" ${chosen?.id===g.id?'selected':''}>GRUPO ${g.code} · ${g.sessions.map(s=>`${s.day} ${s.start}-${s.end}`).join(' / ')}</option>`).join('')}</select></div>
+ ${gs.map(g=>`<option value="${g.id}" ${chosen?.id===g.id?'selected':''}>GRUPO ${escapeHtml(g.code)} · ${g.sessions.map(s=>`${escapeHtml(displayDay(s.day))} ${escapeHtml(s.start)}-${escapeHtml(s.end)}`).join(' / ')}</option>`).join('')}</select></div>
  <div class="small muted">${escapeHtml([...new Set(gs.map(g=>g.room))].join(', '))}</div>
  <div class="actions">${chosen?btn('Retirar del borrador','toggle-course','btn-mini btn-danger',`data-course-id="${c.id}"`):
  btn('Añadir al borrador +','toggle-course','btn-lime btn-mini',`data-course-id="${c.id}"`)}</div>`:
@@ -283,7 +288,7 @@ function calendar(){const acts=state.data.activities;const today=state.calendarD
  const yr=Number(today.slice(0,4)),month=Number(today.slice(5,7));const first=new Date(yr,month-1,1),days=new Date(yr,month,0).getDate();
  const lead=(first.getDay()+6)%7;
  const fmt=n=>`${yr}-${String(month).padStart(2,'0')}-${String(n).padStart(2,'0')}`;
- let cells=shortDay.slice(0,5).concat(['Sab','Dom']).map(day=>`<div class="eyebrow" style="text-align:center">${day}</div>`).join('');
+ let cells=shortDay.slice(0,5).concat(['Sab','Dom']).map(day=>`<div class="eyebrow" style="text-align:center">${displayDay(day)}</div>`).join('');
  for(let i=0;i<lead;i++)cells+='<span></span>';
  for(let n=1;n<=days;n++){
  const iso=fmt(n),items=acts.filter(a=>a.due_date===iso);const statuses=items.map(x=>x.state);
@@ -295,7 +300,7 @@ function calendar(){const acts=state.data.activities;const today=state.calendarD
  return head('06 · VERTICAL','Calendario. <em>Casillas del mes.</em>','Diagonal roja: atrasada; naranja: pendiente; verde: entregada.',linkRoute('Abrir Mi agenda →','agenda'))+
  `<div class="grid-2"><section class="card canvas-grid"><div class="between"><div class="cal-nav"><button type="button" class="btn-mini" data-action="cal-prev-month" aria-label="Mes anterior">←</button><h2 style="margin:0;font-size:1.3rem">${first.toLocaleDateString('es-CO',{month:'long',year:'numeric'}).replace(/^./,ch=>ch.toUpperCase())}</h2><button type="button" class="btn-mini" data-action="cal-next-month" aria-label="Mes siguiente">→</button></div><div class="row-left">${btn('Nov 2026','demo-month','btn-mini')}</div></div>
  <div class="calendar">${cells}</div></section>
- <section class="card"><div class="eyebrow">ACTIVIDADES DEL DÍA</div><h2>${escapeHtml(today)}</h2>
+ <section class="card"><div class="eyebrow">ACTIVIDADES DEL DÍA</div><h2>${escapeHtml(new Date(yr,month-1,Number(today.slice(8,10))).toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'}))}</h2>
  ${list.length?list.map(a=>`<div class="item"><div><strong>${escapeHtml(a.title)}</strong><div class="small muted">${escapeHtml(a.course)} · ${escapeHtml(a.state)}</div></div>
  <div class="actions">${btn(a.completed?'Marcar pendiente':'Marcar entregada','activity-toggle','btn-mini',`data-activity-id="${a.id}" data-done="${a.completed?'false':'true'}"`)}</div></div>`).join(''):'<div class="notice">No hay entregas registradas para este día.</div>'}
  ${btn('Añadir a Mi agenda +','agenda-preset','btn-lime btn-mini',`data-day="${today}"`)}</section></div>`;
@@ -342,7 +347,7 @@ function crosswordCalculator(all){
  <div class="word-tiles" aria-hidden="true">${codeTiles}</div></div>
  <div class="field" style="margin:0;min-width:min(200px,100%)"><label for="simulate-course" class="small">Materia a calcular</label>
  <select id="simulate-course">${all.map(x=>`<option value="${x.course_id}" ${x.course_id===selectedId?'selected':''}>${escapeHtml(x.name)}</option>`).join('')}</select></div></div>
- <p class="small muted">Simulación: puedes cambiar las tres notas hipotéticas. Los cortes pesan <strong>33 %, 33 % y 34 %</strong>. Escala oficial de 0.0 a 5.0.</p>
+ <p class="small muted">Simulación: puedes cambiar las tres notas hipotéticas. Los cortes pesan <strong>33 %, 33 % y 34 %</strong>. Escala de la demo: de 0,0 a 5,0.</p>
  <div class="calc-equation">
  ${[1,2].map((term,i)=>`<label class="calc-tile"><span class="calc-num">0${term}</span><span class="calc-pct">CORTE ${term} · 33 %</span>
  <input class="calc-grade-input" aria-label="Nota del corte ${term} para la simulación" id="simulate-cut-${term}" type="number" min="0" max="5" step="0.1" inputmode="decimal" value="${[c1,c2][i]??''}" placeholder="—"></label><span class="calc-operator" aria-hidden="true">+</span>`).join('')}
@@ -495,7 +500,7 @@ function adminCatalogue(){const d=state.data;
  <strong>${escapeHtml(c.name)}</strong></div><div class="row-left">${labelTag(`${c.credits} créditos`,'lime')}${labelTag(c.category,tagCat(c.category))}</div></div>`).join('')}</div></section>
  <section class="card"><h2>Grupos <em>ofertados.</em></h2><div class="list">${d.groups.map(g=>`<div class="item"><div><div class="mon muted">${escapeHtml(g.course_code)} / GRUPO ${escapeHtml(g.code)}</div><strong>${escapeHtml(g.name)}</strong>
  <div class="small muted">${escapeHtml(g.teacher||'Sin docente')} · ${escapeHtml(g.room)} · ${g.capacity} cupos</div>
- <div class="tiny">${g.sessions.map(s=>`${s.day} ${s.start}–${s.end}`).join(' · ')}</div></div></div>`).join('')}</div></section></div>`;
+ <div class="tiny">${g.sessions.map(s=>`${escapeHtml(displayDay(s.day))} ${escapeHtml(s.start)}–${escapeHtml(s.end)}`).join(' · ')}</div></div></div>`).join('')}</div></section></div>`;
 }
 function adminAudit(){const rows=state.data.audit;
  return head('A4','Auditoría. <em>Cada cambio deja una pista.</em>','Historial de eventos sensibles, sin registrar contraseñas ni códigos de recuperación.')+
@@ -571,7 +576,7 @@ function modalGroup(){const d=state.data,teachers=d.users.filter(x=>x.role==='te
  <div class="field"><label>Docente</label><select name="teacher_id"><option value="">Sin docente</option>${teachers.map(t=>`<option value="${t.id}">${escapeHtml(t.full_name)}</option>`).join('')}</select></div>
  <div class="field"><label>Aula</label><input name="room" required placeholder="B-301"></div>
  <div class="field"><label>Cupos</label><input name="capacity" type="number" min="1" value="25" required></div>
- <div class="field"><label>Día de clase</label><select name="day">${shortDay.map(d=>`<option value="${d}">${d}</option>`).join('')}</select></div>
+ <div class="field"><label>Día de clase</label><select name="day">${shortDay.map(d=>`<option value="${d}">${displayDay(d)}</option>`).join('')}</select></div>
  <div class="field"><label>Inicio</label><input name="start" type="time" value="08:00"></div>
  <div class="field"><label>Fin</label><input name="end" type="time" value="10:00"></div></div>
  <div class="actions"><button class="btn-primary" type="submit">Crear grupo</button></div></form>`)}
@@ -613,14 +618,15 @@ document.addEventListener('click',async e=>{
   const p=document.getElementById('auth-pass');if(!p)return;
   p.type=p.type==='password'?'text':'password';b.textContent=p.type==='password'?'◉ Mostrar':'◌ Ocultar';tileRefresh('auth-pass');return;
  }
- if(action==='route')return navigate(b.dataset.route);
+ if(action==='route'){const fromOverlay=!!b.closest('.overlay');if(fromOverlay)modalClose();if(b.dataset.route==='tablero'&&fromOverlay)return openMenu(lastFocus);return navigate(b.dataset.route);}
+ if(action==='return-board')return navigate('tablero');
  if(action==='menu'){
-  const side=document.querySelector('.sidebar');side?.classList.toggle('open');b.setAttribute('aria-expanded',side?.classList.contains('open')?'true':'false');return;
+  const side=document.querySelector('.sidebar');if(side?.classList.contains('open'))closeMenu();else openMenu(b);return;
  }
  if(action==='word'){const paths=b.dataset.path.split('|');
-   if(paths.length===1)return navigate(paths[0]);
+   if(paths.length===1)return paths[0]==='tablero'?openMenu(b):navigate(paths[0]);
    return modal('Intersección de palabras',`<p>Esta casilla pertenece a varias rutas. Elige cuál quieres descubrir.</p>
-   <div class="actions">${paths.map(p=>linkRoute(p.toUpperCase(),p,'btn-lime')).join('')}</div>`);
+   <div class="actions">${paths.map(p=>linkRoute(({inscripcion:'MATRÍCULA',horario:'HORARIO',notas:'NOTAS',tablero:'CRUZA · MENÚ'})[p]||p.toUpperCase(),p,'btn-lime')).join('')}</div>`);
  }
  if(action==='theme')return toggleTheme();
  if(action==='tool')return toggleTool();
@@ -628,6 +634,12 @@ document.addEventListener('click',async e=>{
    const el=document.getElementById('hint');if(!el)return;el.hidden=!el.hidden;localStorage.setItem('cruza-hints',el.hidden?'0':'1');b.setAttribute('aria-pressed',String(!el.hidden));return;
  }
  if(action==='print-schedule'){window.print();return;}
+ if(action==='class-detail'){
+  const course=state.data.draft.confirmed.find(x=>Number(x.group_id)===Number(b.dataset.groupId));
+  if(!course)return;
+  const sessions=course.sessions.map(s=>`${escapeHtml(displayDay(s.day))} ${escapeHtml(s.start)}–${escapeHtml(s.end)}`).join('<br>');
+  modal(course.name,`<div class="class-detail-intro"><span>FICHA DE MATERIA</span><strong>Grupo ${escapeHtml(course.group_code)}</strong></div><div class="list class-detail-list"><div class="item"><strong>Docente</strong><span>${escapeHtml(course.teacher||'Por asignar')}</span></div><div class="item"><strong>Aula</strong><span>${escapeHtml(course.room||'Por asignar')}</span></div><div class="item"><strong>Horario</strong><span>${sessions}</span></div><div class="item"><strong>Créditos</strong><span>${Number(course.credits)}</span></div></div>`);document.querySelector('.overlay .dialog')?.classList.add('class-detail-dialog');return;
+ }
  if(action==='logout'){
    try{await api('/logout','POST');state.user=null;state.csrf=null;state.data=null;document.documentElement.dataset.theme='light';renderLogin();try{localStorage.removeItem('cruza-theme')}catch{}notify('Sesión cerrada.')}catch(err){notify(err.message)}return;
  }
@@ -747,7 +759,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'&&document.querySelector('.overlay')){modalClose();return}
- if(e.key==='Escape'&&document.querySelector('.sidebar.open')){document.querySelector('.sidebar').classList.remove('open');document.querySelector('[data-action="menu"]')?.focus();return}
+ if(e.key==='Escape'&&document.querySelector('.sidebar.open')){closeMenu();if(menuOpener?.isConnected)menuOpener.focus();return}
  if(e.key==='Tab'){
   const dialog=document.querySelector('.dialog');if(!dialog)return;
   const f=[...dialog.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled)')];
@@ -811,8 +823,7 @@ function triangleGesture(points){if(points.length<30)return false;
  const area=Math.abs((far[0]-f[0])*(third[1]-f[1])-(far[1]-f[1])*(third[0]-f[0]))/2;
  return area>dx*dy*.18;
 }
-document.addEventListener('pointerup',e=>{if(!drawing)return;drawing=false;
- if(triangleGesture(gesture))toggleTool();gesture=[];},{passive:true});
+document.addEventListener('pointerup',()=>{drawing=false;gesture=[];},{passive:true});
 document.addEventListener('pointercancel',()=>{drawing=false;gesture=[]},{passive:true});
 /* Dust in the crossword surface: separate from pencil strokes; no solid lines. */
 let dustFrame=0;

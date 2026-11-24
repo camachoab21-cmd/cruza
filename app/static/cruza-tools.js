@@ -37,7 +37,7 @@
     light:[[187,243,67],[58,225,194],[170,116,255],[255,150,102],[255,234,123]],
     dark:[[203,255,103],[68,245,213],[193,163,255],[255,184,132],[255,238,158]]
   };
-  let mode='pencil',activeBoard=null,prior=null,segments=[],dust=[],frame=0,walk=0;
+  let mode='pencil',activeBoard=null,prior=null,segments=[],dust=[],frame=0,walk=0,penDown=false,ink='#9a72da';
   let width=0,height=0,visible=false,boardActive=false,lastPosition={x:0,y:0};
   const canRun=()=>fine.matches&&!reduce.matches;
   const rgb=(c,a=1)=>'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')';
@@ -58,7 +58,7 @@
     return a.map((v,k)=>Math.round(v+(b[k]-v)*t));
   }
   function setMode(next){
-    mode=next==='crayon'?'crayon':'pencil';
+    mode=['pencil','crayon','eraser'].includes(next)?next:'pencil';
     cursor.dataset.tool=mode;
     const preview=document.getElementById('preview-tool');
     if(preview){
@@ -72,6 +72,7 @@
       appButton.setAttribute('aria-label','Herramienta '+mode+'. Pulsar para cambiar');
       appButton.setAttribute('aria-pressed',String(mode==='crayon'));
     }
+    document.querySelectorAll('[data-draw-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.drawMode===mode)));
     return mode;
   }
   function toggle(){return setMode(mode==='pencil'?'crayon':'pencil');}
@@ -97,11 +98,11 @@
     if(now-lastDraw<16){frame=requestAnimationFrame(render);return;}
     lastDraw=now;
     ctx.clearRect(0,0,width,height);
-    segments=segments.filter(v=>now-v.t<1000);
+    // Los trazos permanecen hasta que el usuario los borre o cambie de pantalla.
     dust=dust.filter(v=>now-v.t<700);
     ctx.lineCap='round';ctx.lineJoin='round';
     for(const s of segments){
-      const fade=Math.max(0,1-(now-s.t)/1000);
+      const fade=1;
       if(fade<=0)continue;
       const a=s.area;
       const clipped=a.w<width-1||a.h<height-1;
@@ -140,10 +141,14 @@
         ctx.beginPath();ctx.arc(x,y,p.radius,0,Math.PI*2);ctx.fill();
       }
     }
-    if((segments.length||dust.length)&&!document.hidden)frame=requestAnimationFrame(render);
+    if(dust.length&&!document.hidden)frame=requestAnimationFrame(render);
   }
   function paint(x,y,area){
     const now=performance.now();
+    if(mode==='eraser'){
+      segments=segments.filter(s=>Math.hypot((s.x+s.xx)/2-x,(s.y+s.yy)/2-y)>28);
+      prior={x,y,t:now};if(!frame)frame=requestAnimationFrame(render);return;
+    }
     if(!prior||now-prior.t>500){prior={x,y,t:now};return;}
     const dist=Math.hypot(x-prior.x,y-prior.y);
     if(dist<1.5){return;}
@@ -158,14 +163,14 @@
       const nextX=k===steps?x:currX+stepDx;
       const nextY=k===steps?y:currY+stepDy;
       walk+=stepDist;
-      const start=paletteAt(walk/77),end=paletteAt((walk+stepDist)/77+.22);
+      const start=[parseInt(ink.slice(1,3),16),parseInt(ink.slice(3,5),16),parseInt(ink.slice(5,7),16)],end=start;
       const gradient=ctx.createLinearGradient(currX,currY,nextX||currX+.01,nextY||currY+.01);
       gradient.addColorStop(0,rgb(start));gradient.addColorStop(1,rgb(end));
       segments.push({x:currX,y:currY,xx:nextX,yy:nextY,start,end,gradient,t:now,crayon,area});
       currX=nextX;
       currY=nextY;
     }
-    if(segments.length>380)segments.splice(0,segments.length-380);
+    if(segments.length>1200)segments.splice(0,segments.length-1200);
     const count=crayon?7:4;
     for(let i=0;i<count;i++){
       const color=paletteAt((walk+i*10)/77);
@@ -179,11 +184,11 @@
     if(!frame)frame=requestAnimationFrame(render);
   }
   function onPointer(e){
-    if(e.pointerType!=='mouse'||!canRun()){hide();return;}
+    if(e.pointerType!=='mouse'&&!penDown){hide();return;}
     const board=e.target.closest('.board-map');
-    const onControl=tooInteractive(e)&&!board;
+    const onControl=!!e.target.closest('button,input,textarea,select,a,[role="button"],[contenteditable="true"],.dialog,.overlay,.toast-region,.sidebar,.topbar,.card,.page-heading,.drawing-tools,.hint-bar');
     boardChange(board);
-    if(onControl){
+    if(onControl||board||document.querySelector('.overlay')||mode==='eraser'||!canRun()){
       visible=false;
       root.classList.remove('cruza-art-cursor-on');
       cursor.classList.remove('is-visible','is-large');
@@ -191,7 +196,7 @@
       visible=true;boardActive=!!board;
       cursor.style.left=e.clientX+'px';cursor.style.top=e.clientY+'px';
       cursor.classList.add('is-visible');
-      cursor.classList.toggle('is-large',boardActive);
+      cursor.classList.remove('is-large');
       root.classList.add('cruza-art-cursor-on');
     }
     lastPosition={x:e.clientX,y:e.clientY};
@@ -203,12 +208,20 @@
     // Dibuja el trazo continuo sobre una capa frontal (z-index 45), pasando
     // por encima de textos, títulos grandes y tarjetas sin cortarse ni desaparecer.
     const modal=e.target.closest('[role="dialog"],.dialog,.overlay');
-    if(!modal){
+    if(penDown&&!modal&&!onControl&&!board){
       paint(e.clientX,e.clientY,{x:0,y:0,w:width,h:height});
     }else{
       prior=null;
     }
   }
+  document.addEventListener('pointerdown',e=>{if(e.button===0&&!e.target.closest('button,input,textarea,select,a,.card,.sidebar,.topbar,.page-heading,.drawing-tools,.overlay,.hint-bar')){penDown=true;prior=null;}},{passive:true});
+  document.addEventListener('pointerup',()=>{penDown=false;prior=null},{passive:true});
+  document.addEventListener('pointercancel',()=>{penDown=false;prior=null},{passive:true});
+  document.addEventListener('click',e=>{const choice=e.target.closest('[data-draw-mode]');if(choice)setMode(choice.dataset.drawMode);const toggle=e.target.closest('[data-draw-toggle]');if(toggle){const panel=toggle.closest('.drawing-tools');panel.classList.toggle('expanded');toggle.setAttribute('aria-expanded',String(panel.classList.contains('expanded')))}if(e.target.closest('[data-draw-clear]')){segments=[];dust=[];ctx.clearRect(0,0,width,height);}});
+  document.addEventListener('input',e=>{if(e.target.matches('[data-draw-color]'))ink=e.target.value;});
+  document.addEventListener('click',async e=>{if(!e.target.closest('[data-draw-eyedropper]'))return;const picker=document.querySelector('[data-draw-color]');if(!window.EyeDropper){picker?.click();return}try{const selected=await new EyeDropper().open();ink=selected.sRGBHex;if(picker)picker.value=ink}catch{} });
+  new MutationObserver(()=>{if(document.querySelector('.overlay'))hide();}).observe(document.body,{childList:true});
+  addEventListener('scroll',()=>{penDown=false;prior=null;segments=[];dust=[];ctx.clearRect(0,0,width,height);},{passive:true});
   document.addEventListener('pointermove',onPointer,{passive:true});
   document.addEventListener('pointerout',e=>{if(!e.relatedTarget)hide();},{passive:true});
   document.addEventListener('mouseleave',hide,{passive:true});

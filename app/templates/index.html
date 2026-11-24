@@ -9,10 +9,11 @@
   <link rel="stylesheet" href="/static/app.css?v=20261124_expo2">
   <link rel="stylesheet" href="/static/cruza-tools.css?v=20261124_expo2">
   <link rel="stylesheet" href="/static/cruza-ux.css?v=20261124_expo2">
-  <script defer src="/static/cruza-tools.js?v=20261124_expo2"></script>
-  <script defer src="/static/app.js?v=20261124_expo2"></script>
+  <script defer src="/static/cruza-tools.js?v=20261124_expo7"></script>
+  <script defer src="/static/app.js?v=20261124_expo7"></script>
   <script defer src="/static/cruza-ux.js?v=20261124_expo2"></script>
   <link rel="stylesheet" href="/static/cruza-campus.css?v=2">
+  <link rel="stylesheet" href="/static/cruza-expo-pulido.css?v=4">
   <script defer src="/static/cruza-connectivity.js?v=1"></script>
 </head>
 <body>
@@ -22,6 +23,15 @@
     <a href="/static/cruza-crucigrama.html">Jugar al crucigrama</a>
   </aside>
   <div id="app" aria-live="off"></div>
+  <div id="drawing-tools" class="drawing-tools" role="toolbar" aria-label="Herramientas de dibujo">
+    <button type="button" class="drawing-title" data-draw-toggle aria-expanded="false">✎ Dibujar</button>
+    <button type="button" data-draw-mode="pencil" aria-pressed="true">✎ Lápiz</button>
+    <button type="button" data-draw-mode="crayon" aria-pressed="false">▰ Crayón</button>
+    <button type="button" data-draw-mode="eraser" aria-pressed="false">◇ Borrador</button>
+    <label class="drawing-color">Color <input type="color" value="#9a72da" data-draw-color aria-label="Elegir color del trazo"></label>
+    <button type="button" data-draw-eyedropper title="Tomar un color de la pantalla">◉ Gotero</button>
+    <button type="button" data-draw-clear>Borrar dibujo</button>
+  </div>
   <div id="toast-region" class="toast-region" role="status" aria-live="polite"></div>
   <noscript><div class="noscript">CRUZA requiere JavaScript para navegar. Actívalo en tu navegador.</div></noscript>
 </body>

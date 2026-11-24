@@ -1,0 +1,6 @@
+const {chromium}=require('C:/Users/camac/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const assert=require('node:assert/strict');
+(async()=>{const browser=await chromium.launch({headless:true,executablePath:'C:/Users/camac/Documents/Codex/2026-11-05/referenced-chatgpt-conversation-this-is-an/work/browsers/chromium_headless_shell-1234/chrome-headless-shell-win64/chrome-headless-shell.exe'});
+try{const page=await browser.newPage();await page.goto('http://127.0.0.1:8766/');await page.locator('#auth-user').fill('ESTUDIANTE');await page.locator('#auth-pass').fill('CRUZA2026');await page.locator('#login-button').click();await page.locator('.sidebar').waitFor();
+for(const target of ['inscripcion','horario']) {await page.locator('.sidebar [data-route="tablero"]').click();await page.locator('[data-path="inscripcion|horario"]').click();await page.locator('[role=dialog] [data-route="'+target+'"]').click();assert.equal(await page.locator('[role=dialog]').count(),0,'La intersección debe cerrarse al elegir '+target);assert.equal(await page.locator('.page-heading').isVisible(),true);}
+console.log('Intersección: Matrícula y Horario abren y cierran el selector');}finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});
