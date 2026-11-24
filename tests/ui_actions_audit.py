@@ -85,7 +85,7 @@ def main():
      page.locator(f'#grp-{cid}').select_option(str(group[-1]['id']));actions.append('switch course group')
      wait_for_state(page, 'state.data.draft.problems.length===0')
      click('[data-action="discard"]','discard draft');confirm()
-     wait_for_state(page, 'state.data.draft.problems.length===0')
+     wait_for_state(page, 'course => !state.data.groups.some(group => group.course_id === course && state.data.draft.group_ids.includes(group.id))', arg=cid)
      click(f'[data-action="toggle-course"][data-course-id="{cid}"]','add course again')
      wait_for_state(page, 'state.data.draft.problems.length>0')
      page.locator(f'#grp-{cid}').select_option(str(group[-1]['id']))

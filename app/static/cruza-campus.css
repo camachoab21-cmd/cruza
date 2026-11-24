@@ -71,4 +71,15 @@ html[data-theme="dark"] body[data-module] { --module-accent: hsl(var(--module-hu
   .workspace .page-heading { animation: none; color: black; }
 }
 
-.auth-art .eyebrow, .sidebar .eyebrow { color: #cee4f6; }
+html[data-theme] .auth-art .eyebrow,
+html[data-theme] .sidebar .eyebrow,
+html:not([data-theme]) .auth-art .eyebrow,
+html:not([data-theme]) .sidebar .eyebrow { color: #cee4f6 !important; }
+
+html[data-theme="dark"] .stat:is(.lime,.peach,.purple) :is(.eyebrow,small) {
+  color: #243447 !important;
+}
+.hint-bar:not(.has-message) {
+  opacity: 0;
+  pointer-events: none;
+}
