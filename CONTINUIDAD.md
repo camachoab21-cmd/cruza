@@ -1,66 +1,72 @@
-# Continuidad del proyecto CRUZA 3
+# CRUZA 3 — continuidad verificada
 
-**Última actualización:** 17 de noviembre de 2026.  
-**Cuenta propietaria verificada:** `camachoab21-cmd`.  
-**Repositorio y rama:** <https://github.com/camachoab21-cmd/cruza>, `main`.  
-**Colaborador:** `ISFRANT`, permiso `write` confirmado.  
-**Guía de exposición:** [PRESENTAR-AHORA.md](PRESENTAR-AHORA.md).
+**Actualizado:** 23 de noviembre de 2026, para la exposición del 24 de noviembre.  
+**Repositorio:** https://github.com/camachoab21-cmd/cruza — rama estable `main`.  
+**Código de referencia con CI aprobada:** `173c639cfe3372f7629fd50fc4646d576dd2ea15` (PR #7). **El colaborador Isfrant publicó después `2525573f` en `main`**, con cambios de interfaz y reglas de calificación aún no validados por la misma CI.  
+**Colaborador verificado:** `ISFRANT`, permiso `write` de GitHub confirmado el 23 de noviembre.
 
-## Estado funcional verificado
+**INSTRUCCIÓN PARA CONTINUAR:** leer [docs/COLABORACION-Y-ENTREGA-23NOV.md](docs/COLABORACION-Y-ENTREGA-23NOV.md). No volver a comenzar la app desde cero ni confundir GitHub Pages con la aplicación completa. El último código está en `main`.
 
-CRUZA 3 es un proyecto universitario independiente de gestión académica con interfaz temática de crucigrama y tres roles (estudiante, docente y administrador). Se conserva una demostración HTML antigua independiente, pero **la aplicación con validaciones reales** requiere FastAPI y SQLite.
+## Qué existe
 
-- **Frontend:** `app/templates/index.html`, `app/static/app.css`, `app/static/app.js`, `app/static/favicon.svg`. Incluye acceso crucigrama, diseño responsive, modo día/noche, pistas y cursor pincel/lápiz.
-- **Backend:** `app/main.py` (login, permisos por rol y registro, sesiones HTTP-only, CSRF, recuperación, horarios, matrícula, notas, agenda, administración).
-- **Datos:** `app/db.py` (SQLite, semilla ficticia en modo demo, PBKDF2, transacciones y auditoría).
-- **Lógica:** `app/logic.py` (créditos enteros, cruces de horario, ponderaciones, PAPA/PAPI de demostración).
-- **Arranque Windows:** `ABRIR-CRUZA.bat`, `INSTALAR.bat`, `INICIAR-CRUZA.bat`. Puerto local `8765`. Al ejecutar `INICIAR-CRUZA.bat` se activa `CRUZA_DEMO_MODE=1` con la base de datos local `data/cruza.sqlite3`.
-- **Modo demo:** usuarios `ESTUDIANTE / CRUZA2026`, `DOCENTE / CLASE2026`, `ADMIN / ADMIN2026`, `PENDIENTE / CRUZA2026`. Solo para datos ficticios en uso local. No habilitar demo en producción.
-- **Respaldo:** `index.html` autónomo y `respaldo/`, conservados sin sobrescribir las versiones anteriores.
+La aplicación académica funcional usa **FastAPI, SQLite, HTML/CSS/JS** y roles estudiante, docente y administrador. Conserva autenticación con sesiones HTTP-only, CSRF, roles, aprobación administrativa, recuperación asistida, pensum, matrícula sin cruces, horarios, agenda, notas, asistencia, historial, catálogo y auditoría. El proyecto es académico y sus cuentas de demostración son ficticias.
 
-## Comprobaciones ejecutadas
+- `app/main.py`: API y validación de permisos.
+- `app/db.py`: tablas SQLite, transacciones, semilla ficticia y seguridad de claves.
+- `app/logic.py`: reglas académicas de demostración.
+- `app/static/app.js`, `app/static/app.css`: lógica visual y estilos originales.
+- `app/static/cruza-ux.js`, `app/static/cruza-ux.css`: interfaz Expo 24.11, modo claro/oscuro, tamaño de letra A−/A/A+, ayuda contextual inferior y recorrido guiado por rol.
+- `app/static/cruza-tools.js`, `app/static/cruza-tools.css`: lápiz/crayón y pigmentos.
+- `app/templates/index.html`: plantilla FastAPI con versión `20261123-expo.1`.
+- `ABRIR-CRUZA.bat`, `INICIAR-CRUZA.bat`: arranque local con espera de respuesta HTTP real; detecta puerto ocupado.
+- `ACTUALIZAR-Y-ABRIR-CRUZA.bat`: descarga `main` con respaldo Git de modificaciones **rastreables** antes de iniciar, sin eliminar SQLite.
+- `scripts/build_expo_package.py`: genera ZIP portable para Windows sin secretos, bases ni entornos virtuales.
+- `render.yaml`: **propuesta** de despliegue con disco persistente. No implica que el servicio o dominio estén activos.
 
-1. **20 pruebas de API y lógica** aprobadas, en un entorno Python aislado, con FastAPI TestClient.
-2. **Chromium con la interfaz real** y servidor HTTP FastAPI/SQLite a través de un puente Python: 26 peticiones procesadas; sin errores JavaScript ni HTTP 5xx. Incluye estudiante, matrícula con conflicto, cambio de grupo, agenda, docente, administrador y aprobación de cuenta.
-3. Recursos `/`, `/favicon.ico`, `/static/favicon.svg`, `/static/app.js`, `/static/app.css` y `/api/session` respondieron HTTP 200 en TestClient.
-4. **GitHub Actions**: workflow `.github/workflows/tests.yml` creado y ejecutado correctamente en GitHub en los commits observados. Consultar el resultado del último commit en `Actions`.
-5. **Capturas publicadas:** `docs/capturas/login.jpg`, `estudiante.jpg`, `conflicto-matricula.jpg`, `administrador.jpg`. **Video publicado:** `docs/CRUZA3-VISITA-GUIADA.mp4` (46,5 segundos, versión compacta). `VER-RECORRIDO.html` permite navegar capítulos.
+Se conservan `index.html` (demo visual GitHub Pages), `respaldo/`, la guía de exposición y el MP4. La vista HTML pública **no es** la aplicación con servidor.
 
-**Límite importante:** el Chromium del entorno de pruebas bloquea abrir `localhost` directamente; la prueba de interfaz envía las llamadas de red al backend real mediante un puente. Se debe confirmar el arranque y navegación HTTP directos en el Windows de la exposición. No afirmar que la aplicación ya está alojada públicamente con FastAPI.
+## Pruebas y artefactos
 
-## Estado del repositorio
+**Última ejecución completamente validada para la base anterior `173c639c`:** [GitHub Actions #78](https://github.com/camachoab21-cmd/cruza/actions/runs/45255955201), resultado `success`. Fueron 21 pasos, sin fallos: pytest/API/roles, navegador FastAPI y SQLite temporal, pantallas multirresolución, lápiz/crayón, ayuda tipográfica y comprobación de integridad ZIP.
 
-- La conexión del propietario `camachoab21-cmd` tiene permisos de administración/escritura; no se usa la cuenta de Edwin.
-- El código, el README, el workflow CI, el video, las capturas y la guía están en `main`.
-- Para ver el commit más reciente, consultar la rama `main` o ejecutar `git log -1 --oneline` dentro de una copia sincronizada.
-- La carpeta Windows `Documents\CRUZA-PUBLICACION` estaba actualizada hasta un commit anterior; **no se sincroniza automáticamente con cada nuevo commit**. Antes de exponer, ejecutar `git pull --ff-only origin main` dentro de esa carpeta y luego `ABRIR-CRUZA.bat`.
-- La carpeta `Documents\ChatGPT\Dev\cruza` mantenía la rama local `cruza-funcional` y archivos no rastreados. **No forzar merge ni borrar archivos sin revisar y respaldar**.
+- [Paquete completo de exposición](https://github.com/camachoab21-cmd/cruza/actions/runs/45255955201/artifacts/14858527019): ZIP de la aplicación y guía, sin SQLite privada. Artefacto retenido hasta el **7-dic-2026**.
+- [Capturas y auditoría visual](https://github.com/camachoab21-cmd/cruza/actions/runs/45255955201/artifacts/14859420570): artefacto disponible hasta el **21-feb-2027**.
+- [Guía y recorrido para mañana](docs/EXPOSICION-24NOV-2026.md).
+- Las pruebas automáticas son evidencia técnica, pero **no prueban** la velocidad ni el arranque en el computador de exposición del propietario.
 
-## Tareas aún pendientes
+## Uso local recomendado
 
-1. Confirmar inicio y navegación HTTP en el Windows del usuario con el último commit, y solucionar cualquier incidencia observada allí.
-2. Para ofrecer uso remoto multiusuario: desplegar servidor con HTTPS y base de datos persistente, desactivar demo, configurar cuentas reales y auditar seguridad. **GitHub Pages solo publica el HTML estático, no FastAPI/SQLite.**
-3. Verificar fórmulas y terminología PAPA/PAPI y reglamento actual de UTS; los porcentajes/cupos/créditos máximos de la demo son supuestos y no deben presentarse como normas oficiales.
-4. Continuar pruebas visuales de teclado, zoom, accesibilidad y navegadores reales, preservando el diseño actual.
-
-## Comandos de pruebas
-
-```bash
-python -m pip install -r requirements.txt pytest httpx
-CRUZA_DEMO_MODE=1 python -m pytest -q
-python -m pip install playwright
-python tests/e2e_navegador_servidor.py
-```
-
-En PowerShell, para la prueba local:
+En una copia nueva de Windows con Python 3.10+ y Git:
 
 ```powershell
-$env:CRUZA_DEMO_MODE="1"
-python -m pytest -q
+git clone https://github.com/camachoab21-cmd/cruza.git
+cd cruza
+.\ABRIR-CRUZA.bat
 ```
 
-La prueba E2E arranca servidor propio con base SQLite temporal; no usa la base personal. `tests/ui_smoke.py` documenta el recorrido visual con transporte aislado.
+Se requiere internet la primera vez para instalar dependencias. Cuando FastAPI esté listo, usar `http://127.0.0.1:8765/` y mantener abierta la consola. Para evitar conflictos, cerrar el servidor anterior antes de ejecutar el nuevo.
 
-## Prompt breve de continuación
+En modo demostración y solo **con base nueva**, usuarios ficticios:
 
-> Continúa CRUZA 3 desde la rama main del repositorio camachoab21-cmd/cruza. Verifica lo que ya existe antes de tocarlo. Lee PRESENTAR-AHORA.md, README.md, VERIFICACION.md y REGLAS_NEGOCIO.md. Conserva los respaldos. Prioriza comprobar la aplicación en Windows, evitar defectos visuales, mantener control de roles, bloqueo al cuarto fallo, recuperación administrativa y matrícula sin cruces. Publica cambios comprobados sin forzar la rama ni subir datos, contraseñas, .venv o archivos SQLite. La prueba en Chromium usa puente HTTP; no confundirla con navegación directa en Windows.
+| Rol | Usuario | Clave |
+|---|---|---|
+| Estudiante | `ESTUDIANTE` | `CRUZA2026` |
+| Docente | `DOCENTE` | `CLASE2026` |
+| Administrador | `ADMIN` | `ADMIN2026` |
+
+El modo demo **debe permanecer desactivado para Internet**.
+
+## Lo pendiente / riesgos conocidos
+
+**Prioridad urgente tras el cambio concurrente:** revisar [commit `2525573f` de Isfrant](https://github.com/camachoab21-cmd/cruza/commit/2525573f4b10ba9ba637b7584783532efa78dd62). Incorpora evaluaciones 60/30/10 y cortes 33/33/34, distintos de los supuestos documentados para la demo anterior. Confirmar criterios académicos antes de exponer. [Issue #10](https://github.com/camachoab21-cmd/cruza/issues/10) describe el fallo reproducido de la transición visual del cierre de sesión en GitHub Actions; no afirmar que está resuelto.
+
+1. **Sincronización del equipo propietario:** su copia anterior estaba en `C:\Users\camac\Documents\CRUZA-PUBLICACION`. No se puede afirmar que sus cambios exclusivos estén en `main` sin inspeccionar esa carpeta; comparar antes de fusionar.
+2. **Validación física:** abrir en Windows, comprobar puerto 8765, fuentes, rendimiento del lápiz/crayón, selección de materia y roles a resolución del proyector.
+3. **Publicación externa:** requiere alojamiento de FastAPI, HTTPS, base persistente y cuentas seguras. El dominio `.tk` **no está verificado, registrado ni publicado**.
+4. **Normativa real UTS:** algunas fórmulas, pesos, límites y etiquetas PAPA/PAPI son supuestos académicos de la demostración; no presentar como norma vigente sin verificación.
+
+## Cómo trabajar en equipo
+
+El compañero puede clonar y desarrollar desde `main` usando una rama propia. Evitar `push` directo a `main`, no subir `data/`, `.env`, ZIPs generados ni `.venv`; crear PR y validar GitHub Actions.
+
+**Prompt para Codex o Work:** «Continúa CRUZA 3 desde `main` del repositorio `camachoab21-cmd/cruza`. Lee `docs/COLABORACION-Y-ENTREGA-23NOV.md` y `CONTINUIDAD.md` antes de cambiar código. Revisa la instalación local y sus diferencias sin eliminar datos, corrige solo incidencias reproducibles, valida los tres roles y la calidad visual, y publica los cambios mediante PR con pruebas exitosas. La exposición es el 24 de noviembre de 2026».

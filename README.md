@@ -1,8 +1,8 @@
 # CRUZA 3 · Campus académico interactivo
 
-**EXPOSICIÓN:** [Abrir la guía de presentación, usuarios y alternativa de emergencia](PRESENTAR-AHORA.md). [Video del recorrido](docs/CRUZA3-VISITA-GUIADA.mp4) · [Capturas](docs/capturas/estudiante.jpg).
+**ENTREGA ACTUALIZADA — 23 de noviembre de 2026:** [Guía para el compañero, tareas y descargas](docs/COLABORACION-Y-ENTREGA-23NOV.md) · [Guía de exposición del 24 de noviembre](docs/EXPOSICION-24NOV-2026.md) · [Acciones y resultados de pruebas](https://github.com/camachoab21-cmd/cruza/actions/runs/45255955201) · [Paquete Windows](https://github.com/camachoab21-cmd/cruza/actions/runs/45255955201/artifacts/14858527019).
 
-**Estado verificado (17 de noviembre de 2026):** publicado en `camachoab21-cmd/cruza`, rama `main`, con pruebas de GitHub Actions completadas correctamente. Cuenta conectada `camachoab21-cmd`; colaborador `ISFRANT` con permiso `write`. La navegación HTTP directa en el PC de Windows sigue pendiente de una comprobación final.
+**Estado verificado (23 de noviembre de 2026):** la base `173c639c` superó **21 pasos de GitHub Actions** en el PR #7 (API, roles, SQLite aislada, pruebas visuales y ZIP). Después, el colaborador `ISFRANT` —permiso `write`— publicó el commit `2525573f` en `main` con cambios de diseño y nuevas ponderaciones académicas, **todavía pendientes de validar**. [Comparar el cambio](https://github.com/camachoab21-cmd/cruza/commit/2525573f4b10ba9ba637b7584783532efa78dd62). [Incidencia del logout en CI](https://github.com/camachoab21-cmd/cruza/issues/10). Los archivos exclusivos de la instalación local del propietario y el arranque real en ese PC **no han podido cotejarse desde GitHub**; el despliegue público con FastAPI y dominio `.tk` también sigue pendiente.
 
 **Prototipo independiente y no oficial para presentación académica — datos ficticios.**
 
@@ -101,6 +101,10 @@ $env:CRUZA_DEMO_MODE='1'
 Se ejecutaron **20 pruebas automáticas de API y lógica**, un recorrido de integración Chromium/frontend con **26 solicitudes procesadas por el servidor HTTP real** y pruebas adicionales de acceso, matrícula, docente, administración y móvil. También existen **4 recorridos visuales aislados** históricos. El video incluido en GitHub, `docs/CRUZA3-VISITA-GUIADA.mp4`, muestra la interfaz mediante una secuencia de capturas de acciones verificadas. No es una grabación continua del uso real en Windows.
 
 En `tests/ui_smoke.py` hay una prueba visual aislada en Chromium (con datos auténticos de la API y transporte simulado **por las restricciones de localhost del entorno de desarrollo**). **No sustituye** probar la web real en Chromium en tu PC; prueba el recorrido completo en `http://127.0.0.1:8765` antes de la exposición.
+
+## Continuar en equipo (versión de exposición)
+
+**Leer primero:** [docs/COLABORACION-Y-ENTREGA-23NOV.md](docs/COLABORACION-Y-ENTREGA-23NOV.md). Describe qué ya está en GitHub, cómo clonar sin sobrescribir datos, qué puede revisar el compañero, la descarga ZIP y los límites de la versión local. Los cambios nuevos deben hacerse en ramas y revisarse por Pull Request.
 
 ## Publicación y colaboración
 
