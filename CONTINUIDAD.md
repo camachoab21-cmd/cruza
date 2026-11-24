@@ -2,7 +2,7 @@
 
 **Actualizado:** 23 de noviembre de 2026, para la exposición del 24 de noviembre.  
 **Repositorio:** https://github.com/camachoab21-cmd/cruza — rama estable `main`.  
-**Código de referencia antes de esta actualización documental:** `173c639cfe3372f7629fd50fc4646d576dd2ea15` (PR #7).  
+**Código de referencia con CI aprobada:** `173c639cfe3372f7629fd50fc4646d576dd2ea15` (PR #7). **El colaborador Isfrant publicó después `2525573f` en `main`**, con cambios de interfaz y reglas de calificación aún no validados por la misma CI.  
 **Colaborador verificado:** `ISFRANT`, permiso `write` de GitHub confirmado el 23 de noviembre.
 
 **INSTRUCCIÓN PARA CONTINUAR:** leer [docs/COLABORACION-Y-ENTREGA-23NOV.md](docs/COLABORACION-Y-ENTREGA-23NOV.md). No volver a comenzar la app desde cero ni confundir GitHub Pages con la aplicación completa. El último código está en `main`.
@@ -27,7 +27,7 @@ Se conservan `index.html` (demo visual GitHub Pages), `respaldo/`, la guía de e
 
 ## Pruebas y artefactos
 
-**Última ejecución validada:** [GitHub Actions #78](https://github.com/camachoab21-cmd/cruza/actions/runs/45255955201), resultado `success`. Fueron 21 pasos, sin fallos: pytest/API/roles, navegador FastAPI y SQLite temporal, pantallas multirresolución, lápiz/crayón, ayuda tipográfica y comprobación de integridad ZIP.
+**Última ejecución completamente validada para la base anterior `173c639c`:** [GitHub Actions #78](https://github.com/camachoab21-cmd/cruza/actions/runs/45255955201), resultado `success`. Fueron 21 pasos, sin fallos: pytest/API/roles, navegador FastAPI y SQLite temporal, pantallas multirresolución, lápiz/crayón, ayuda tipográfica y comprobación de integridad ZIP.
 
 - [Paquete completo de exposición](https://github.com/camachoab21-cmd/cruza/actions/runs/45255955201/artifacts/14858527019): ZIP de la aplicación y guía, sin SQLite privada. Artefacto retenido hasta el **7-dic-2026**.
 - [Capturas y auditoría visual](https://github.com/camachoab21-cmd/cruza/actions/runs/45255955201/artifacts/14859420570): artefacto disponible hasta el **21-feb-2027**.
@@ -57,6 +57,8 @@ En modo demostración y solo **con base nueva**, usuarios ficticios:
 El modo demo **debe permanecer desactivado para Internet**.
 
 ## Lo pendiente / riesgos conocidos
+
+**Prioridad urgente tras el cambio concurrente:** revisar [commit `2525573f` de Isfrant](https://github.com/camachoab21-cmd/cruza/commit/2525573f4b10ba9ba637b7584783532efa78dd62). Incorpora evaluaciones 60/30/10 y cortes 33/33/34, distintos de los supuestos documentados para la demo anterior. Confirmar criterios académicos antes de exponer. [Issue #10](https://github.com/camachoab21-cmd/cruza/issues/10) describe el fallo reproducido de la transición visual del cierre de sesión en GitHub Actions; no afirmar que está resuelto.
 
 1. **Sincronización del equipo propietario:** su copia anterior estaba en `C:\Users\camac\Documents\CRUZA-PUBLICACION`. No se puede afirmar que sus cambios exclusivos estén en `main` sin inspeccionar esa carpeta; comparar antes de fusionar.
 2. **Validación física:** abrir en Windows, comprobar puerto 8765, fuentes, rendimiento del lápiz/crayón, selección de materia y roles a resolución del proyector.
