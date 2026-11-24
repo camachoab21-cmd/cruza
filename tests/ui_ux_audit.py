@@ -57,11 +57,11 @@ with sync_playwright() as pw:
         page.wait_for_selector('[data-font-trigger]')
         page.locator('[data-font-trigger]').click()
         assert page.locator('[data-font-menu]').is_visible()
-        page.locator('[data-font-choice="1.12"]').click()
-        assert abs(page.evaluate('CruzaUX.debug().scale')-1.12)<.001
+        page.locator('[data-font-choice="1.25"]').click()
+        assert abs(page.evaluate('CruzaUX.debug().scale')-1.25)<.001
         page.evaluate('render()')
         page.wait_for_selector('[data-font-trigger]')
-        assert abs(page.evaluate('CruzaUX.debug().scale')-1.12)<.001
+        assert abs(page.evaluate('CruzaUX.debug().scale')-1.25)<.001
         page.locator('#content [data-route="inscripcion"]').hover()
         assert 'grupos' in page.locator('#hint').inner_text().lower() or 'matrícula' in page.locator('#hint').inner_text().lower()
         # La ayuda no debe borrarse mediante el observador al actualizar su propio texto.

@@ -6,15 +6,21 @@
   <meta name="cruza-build" content="20261123-expo.1">
   <title>CRUZA 3 · Campus académico interactivo · Expo 24.11</title>
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/app.css?v=20261123_expo1">
-  <link rel="stylesheet" href="/static/cruza-tools.css?v=20261123_expo1">
-  <link rel="stylesheet" href="/static/cruza-ux.css?v=20261123_expo1">
-  <script defer src="/static/cruza-tools.js?v=20261123_expo1"></script>
-  <script defer src="/static/app.js?v=20261123_expo1"></script>
-  <script defer src="/static/cruza-ux.js?v=20261123_expo1"></script>
+  <link rel="stylesheet" href="/static/app.css?v=20261124_expo2">
+  <link rel="stylesheet" href="/static/cruza-tools.css?v=20261124_expo2">
+  <link rel="stylesheet" href="/static/cruza-ux.css?v=20261124_expo2">
+  <script defer src="/static/cruza-tools.js?v=20261124_expo2"></script>
+  <script defer src="/static/app.js?v=20261124_expo2"></script>
+  <script defer src="/static/cruza-ux.js?v=20261124_expo2"></script>
+  <link rel="stylesheet" href="/static/cruza-campus.css?v=1">
+  <script defer src="/static/cruza-connectivity.js?v=1"></script>
 </head>
 <body>
   <canvas id="ambient-canvas" aria-hidden="true"></canvas>
+  <aside id="cruza-connection" class="cruza-connection" hidden>
+    <span role="status">Sin conexión con CRUZA.</span>
+    <a href="/static/cruza-crucigrama.html">Jugar al crucigrama</a>
+  </aside>
   <div id="app" aria-live="off"></div>
   <div id="toast-region" class="toast-region" role="status" aria-live="polite"></div>
   <noscript><div class="noscript">CRUZA requiere JavaScript para navegar. Actívalo en tu navegador.</div></noscript>

@@ -1,0 +1,74 @@
+/* Cada sección conserva sus colores en la navegación y en el contenido. */
+body[data-module] { --module-hue: 268; --module-accent: hsl(var(--module-hue) 66% 37%); }
+body[data-module="tablero"], .navbtn[data-route="tablero"] { --module-hue: 269; }
+body[data-module="pensum"], .navbtn[data-route="pensum"] { --module-hue: 219; }
+body[data-module="inscripcion"], .navbtn[data-route="inscripcion"] { --module-hue: 160; }
+body[data-module="horario"], .navbtn[data-route="horario"] { --module-hue: 29; }
+body[data-module="calendario"], .navbtn[data-route="calendario"] { --module-hue: 319; }
+body[data-module="agenda"], .navbtn[data-route="agenda"] { --module-hue: 191; }
+body[data-module="notas"], .navbtn[data-route="notas"] { --module-hue: 244; }
+body[data-module="asistencia"], .navbtn[data-route="asistencia"] { --module-hue: 145; }
+body[data-module="historial"], .navbtn[data-route="historial"] { --module-hue: 294; }
+body[data-module="perfil"], .navbtn[data-route="perfil"] { --module-hue: 350; }
+body[data-module="estudiantes"], .navbtn[data-route="estudiantes"] { --module-hue: 202; }
+body[data-module="recuperacion"], .navbtn[data-route="recuperacion"] { --module-hue: 7; }
+body[data-module="catalogo"], .navbtn[data-route="catalogo"] { --module-hue: 123; }
+body[data-module="auditoria"], .navbtn[data-route="auditoria"] { --module-hue: 44; }
+html[data-theme="dark"] body[data-module] { --module-accent: hsl(var(--module-hue) 90% 77%); }
+.workspace .page-heading {
+  padding: clamp(.9rem, 2.5vw, 1.55rem);
+  border-radius: 1rem;
+  border-inline-start: .38rem solid hsl(var(--module-hue) 76% 57%);
+  background: linear-gradient(118deg, color-mix(in srgb, var(--module-accent) 15%, var(--paper2)), var(--paper2) 84%);
+}
+.workspace .page-heading h1 { color: var(--module-accent); overflow-wrap: anywhere; }
+.workspace .page > .card { border-block-start: .22rem solid hsl(var(--module-hue) 68% 59%); }
+.sidebar .navbtn .mon {
+  background: hsl(var(--module-hue) 80% 82%);
+  color: hsl(var(--module-hue) 58% 19%);
+  border-radius: .35rem;
+  padding: .14rem .27rem;
+}
+.workspace :focus-visible, .sidebar :focus-visible, .auth-form-card :focus-visible {
+  outline: 3px solid var(--module-accent);
+  outline-offset: 2px;
+}
+.auth-form-card > .cruza-font-controls { justify-self: end; width: fit-content; margin-inline-start: auto; }
+.auth-form-card .cruza-font-menu { inset-inline-end: 0; }
+.cruza-font-trigger { white-space: nowrap; }
+.cruza-connection[hidden] { display: none; }
+.cruza-connection {
+  position: fixed;
+  z-index: 100;
+  inset: auto 1rem 1rem;
+  margin-inline: auto;
+  width: fit-content;
+  max-width: calc(100% - 2rem);
+  box-sizing: border-box;
+  padding: .65rem 1rem;
+  border-radius: .75rem;
+  color: #f6f2ff;
+  background: #271844;
+  box-shadow: 0 8px 25px #130d35aa;
+}
+.cruza-connection a { color: #d4ff8b; margin-inline-start: .6rem; font-weight: 800; }
+@media (max-width: 600px) {
+  .topbar .controls { flex-wrap: wrap; }
+  .topbar .cruza-font-caption { display: none; }
+  .workspace .page-heading h1 { font-size: clamp(1.65rem, 8vw, 2.35rem); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .workspace .page-heading { animation: cruza-module-in 230ms ease-out both; }
+  .sidebar .navbtn .mon { transition: transform 160ms ease-out; }
+  .sidebar .navbtn:is(:hover,:focus-visible) .mon { transform: scale(1.13); }
+  @keyframes cruza-module-in {
+    from { opacity: .6; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+@media print {
+  .cruza-connection { display: none; }
+  .workspace .page-heading { animation: none; color: black; }
+}
+
+.auth-art .eyebrow, .sidebar .eyebrow { color: #cee4f6; }

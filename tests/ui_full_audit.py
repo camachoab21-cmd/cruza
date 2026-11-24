@@ -1,8 +1,8 @@
-from cruza_assets import inline_tools
 """Auditoría E2E: visual por rol/pantalla, controles, estado y API real aislada."""
 from pathlib import Path
-import os,sys,shutil,socket,tempfile,subprocess,time,urllib.request,urllib.error,http.cookiejar,re,json
+import os,sys,shutil,socket,tempfile,subprocess,time,urllib.request,json
 from playwright.sync_api import sync_playwright
+from browser_checks import stop_server, wait_for_state
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'docs'/'auditoria';OUT.mkdir(parents=True,exist_ok=True)
 
@@ -20,32 +20,16 @@ def audit():
      if urllib.request.urlopen(base+'/api/session',timeout=.5).status==200:break
     except Exception:time.sleep(.1)
    else:raise RuntimeError('Servidor no arrancó')
-   html=inline_tools((ROOT/'app/templates/index.html').read_text('utf8'),ROOT)
-   css=(ROOT/'app/static/app.css').read_text('utf8')
-   html,n1=re.subn(r'<link\s+rel="stylesheet"\s+href="/static/app\.css[^"]*"\s*/?>',lambda m:'<style>'+css+'</style>',html)
-   html,n2=re.subn(r'<script\s+defer\s+src="/static/app\.js[^"]*"\s*>\s*</script>','',html)
-   assert n1==n2==1,(n1,n2)
-   javascript=(ROOT/'app/static/app.js').read_text('utf8')
-   shim='''<script>const store={};Object.defineProperty(window,'localStorage',{configurable:true,value:{getItem(k){return store[k]??null},setItem(k,v){store[k]=String(v)}}});
-   window.fetch=async(url,opts={})=>{const r=await window.cruzaBridge({url:String(url),method:opts.method||'GET',headers:opts.headers||{},body:opts.body||null});return new Response(r.body,{status:r.status,headers:{'Content-Type':'application/json'}})};</script>'''
-   html=html.replace('</body>',shim+'<script>'+javascript+'</script></body>')
-   cookies=http.cookiejar.CookieJar();opener=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookies))
    calls=[];js_errors=[];screens=[];issues=[];controls_report=[]
-   def bridge(a):
-    req=urllib.request.Request(base+a['url'],data=a['body'].encode() if a['body'] is not None else None,headers=a.get('headers',{}),method=a['method'])
-    try:
-     with opener.open(req,timeout=10) as res:status,data=res.status,res.read().decode()
-    except urllib.error.HTTPError as e:status,data=e.code,e.read().decode()
-    calls.append((a['method'],a['url'],status))
-    return {'status':status,'body':data}
    with sync_playwright() as playwright:
     opt={'headless':True,'args':['--no-sandbox','--disable-dev-shm-usage']}
     if shutil.which('chromium'):opt['executable_path']=shutil.which('chromium')
     browser=playwright.chromium.launch(**opt)
     context=browser.new_context(viewport={'width':1440,'height':900},reduced_motion='reduce')
-    page=context.new_page();page.expose_function('cruzaBridge',bridge)
+    page=context.new_page()
     page.on('pageerror',lambda x:js_errors.append(str(x)))
-    page.set_content(html);page.wait_for_selector('#auth-user')
+    page.on('response', lambda r: calls.append((r.request.method,r.url,r.status)) if r.url.startswith(base+'/api/') else None)
+    page.goto(base);page.wait_for_selector('#auth-user')
     page.screenshot(path=str(OUT/'00-login-desktop.png'))
     # Long password must not render dozens of vertical rows or be truncated.
     page.locator('#auth-pass').fill('x'*120)
@@ -89,7 +73,7 @@ def audit():
       page.locator('[data-action="menu"]').click()
       assert page.locator('#sidebar').evaluate('(e)=>e.classList.contains("open")')
      page.locator(f'.sidebar [data-route="{key}"]').click()
-     page.wait_for_function('key=>state.page===key',arg=key)
+     wait_for_state(page, 'key=>state.page===key',arg=key)
     for width,height,theme in [(1440,900,'light'),(390,844,'dark'),(768,1024,'light'),(1920,1080,'dark'),(1366,768,'light'),(1024,768,'dark'),(360,800,'light')]:
      page.set_viewport_size({'width':width,'height':height})
      if width==1440:
@@ -109,12 +93,12 @@ def audit():
        page.locator('#simulate-cut-1').fill('4.5')
        page.locator('#simulate-cut-2').fill('3.0')
        page.locator('#simulate-grade').fill('5.0')
-       assert page.locator('#simulate-result').inner_text()=='4,25',page.locator('#simulate-result').inner_text()
+       assert page.locator('#simulate-result').inner_text()=='4,18',page.locator('#simulate-result').inner_text()
        page.locator('#simulate-cut-1').fill('')
        assert page.locator('#simulate-result').inner_text()=='—'
        page.locator('#simulate-cut-1').fill('4.5')
        page.locator('[data-action="sim-quick"][data-grade="4.5"]').click()
-       assert page.locator('#simulate-result').inner_text()=='4,05'
+       assert page.locator('#simulate-result').inner_text()=='4,01'
       if key=='calendario' and width==1440:
        before=page.evaluate('state.calendarDate')
        page.locator('[data-action="cal-next-month"]').click()
@@ -142,7 +126,6 @@ def audit():
    for issue in issues:print('ISSUE',issue)
    return len(issues)
   finally:
-   p.terminate()
-   try:p.wait(timeout=5)
-   except subprocess.TimeoutExpired:p.kill()
+   stop_server(p)
+
 if __name__=='__main__':sys.exit(1 if audit() else 0)

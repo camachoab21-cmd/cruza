@@ -1,16 +1,14 @@
-from cruza_assets import inline_tools
 """Prueba de integración: Chromium y frontend auténticos contra FastAPI/SQLite.
 
-Puente HTTP: Chromium del entorno controlado no puede abrir localhost;
-las llamadas fetch se canalizan a un servidor HTTP real desde Python.
-En el PC del usuario debe probarse también http://127.0.0.1:8765 directamente.
+Chromium se conecta directamente al servidor local.
 
 Requiere: pip install playwright; playwright install chromium
 Ejecutar: python tests/e2e_navegador_servidor.py
 """
-import os,sys,time,socket,tempfile,subprocess,urllib.request,urllib.error,http.cookiejar,shutil,re
+import os,sys,time,socket,tempfile,subprocess,urllib.request,shutil
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+from browser_checks import stop_server, wait_for_state
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -29,79 +27,106 @@ def main():
      if urllib.request.urlopen(base+'/api/session',timeout=.5).status==200:break
     except Exception:time.sleep(.1)
    else:raise RuntimeError('El servidor de prueba no inició.')
-   html=inline_tools((ROOT/'app/templates/index.html').read_text(encoding='utf8'),ROOT)
-   # El HTML usa cache-busting (?v=...), por eso no basta una sustitución literal.
-   css=(ROOT/'app/static/app.css').read_text(encoding='utf8')
-   html,n_css=re.subn(r'<link\s+rel="stylesheet"\s+href="/static/app\.css[^"]*"\s*/?>',lambda _: '<style>'+css+'</style>',html,count=1)
-   assert n_css==1,'No se pudo incorporar el CSS auténtico de CRUZA'
-   html,n_js=re.subn(r'<script\s+defer\s+src="/static/app\.js[^"]*"\s*>\s*</script>','',html,count=1)
-   assert n_js==1,'No se pudo localizar el script auténtico de CRUZA'
-   shim='''<script>
-   const store={};Object.defineProperty(window,'localStorage',{configurable:true,value:{getItem(k){return store[k]??null},setItem(k,v){store[k]=String(v)}}});
-   window.fetch=async(url,options={})=>{const r=await window.cruzaBridge({url:String(url),method:options.method||'GET',headers:options.headers||{},body:options.body||null});return new Response(r.body,{status:r.status,headers:{'Content-Type':'application/json'}})};
-   </script>'''
-   html=html.replace('</body>',shim+'<script>'+(ROOT/'app/static/app.js').read_text(encoding='utf8')+'</script></body>')
-   opener=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
    errors=[];api_calls=[]
-   def bridge(arg):
-    body=arg.get('body');headers=arg.get('headers',{});
-    req=urllib.request.Request(base+arg['url'],data=body.encode() if body is not None else None,headers=headers,method=arg['method'])
-    try:
-     with opener.open(req,timeout=10) as r:status,data=r.status,r.read().decode()
-    except urllib.error.HTTPError as e:status,data=e.code,e.read().decode()
-    api_calls.append((arg['method'],arg['url'],status))
-    return {'status':status,'body':data}
    with sync_playwright() as p:
     opts={'headless':True,'args':['--no-sandbox','--disable-dev-shm-usage']}
     chrome=shutil.which('chromium') or shutil.which('chromium-browser')
     if chrome:opts['executable_path']=chrome
     browser=p.chromium.launch(**opts)
     context=browser.new_context(viewport={'width':1440,'height':900},reduced_motion='reduce')
-    page=context.new_page();page.expose_function('cruzaBridge',bridge);page.on('pageerror',lambda e:errors.append(str(e)))
-    page.set_content(html);page.wait_for_selector('#auth-user')
+    page=context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
+    page.on('response', lambda r: api_calls.append((r.request.method,r.url,r.status)) if r.url.startswith(base+'/api/') else None)
+    page.goto(base);page.wait_for_selector('#auth-user')
+    page.locator('[data-font-trigger]').click()
+    page.locator('[data-font-choice="1.25"]').click()
+    assert page.locator('html').get_attribute('data-font-scale') == '1.25'
+    page.reload()
+    page.locator('#auth-user').wait_for(state='visible')
+    assert page.locator('html').get_attribute('data-font-scale') == '1.25'
+    page.locator('[data-font-trigger]').click()
+    page.locator('[data-font-choice="1"]').click()
     def login(name,pwd):
      page.locator('#auth-user').fill(name);page.locator('#auth-pass').fill(pwd);page.locator('#login-button').click();page.wait_for_selector('.sidebar',timeout=14000)
     def route(key):page.locator(f'.sidebar [data-route="{key}"]').click()
-    def logout():page.locator('.sidebar [data-action="logout"]').click();page.wait_for_selector('#auth-user')
+    def logout():
+     with page.expect_response(lambda r: r.url == base+'/api/logout' and r.request.method == 'POST') as response:
+      page.locator('.sidebar [data-action="logout"]').click()
+     assert response.value.ok
+     page.locator('#auth-user').wait_for(state='visible')
+     assert page.request.get(base+'/api/session').json()['user'] is None
     login('ESTUDIANTE','CRUZA2026');route('pensum');assert page.locator('.page-heading').is_visible()
+    page.set_viewport_size({'width':390,'height':844})
+    page.locator('[data-font-trigger]').click()
+    page.locator('[data-font-choice="1.25"]').click()
+    assert page.locator('[data-font-trigger]').evaluate("""element => {
+      const button = element.getBoundingClientRect();
+      const bar = element.closest('.topbar').getBoundingClientRect();
+      return button.left >= bar.left && button.right <= bar.right;
+    }""")
+    page.set_viewport_size({'width':1440,'height':900})
+    page.locator('[data-font-trigger]').click()
+    page.locator('[data-font-choice="1"]').click()
     route('inscripcion');g=page.evaluate("state.data.groups.filter(g=>g.course_code==='MAT-202')")
     page.locator(f'[data-action="toggle-course"][data-course-id="{g[0]["course_id"]}"]').click()
-    page.wait_for_function("state.data.draft.problems.some(p=>p.reason.includes('Cruce'))")
+    wait_for_state(page, "state.data.draft.problems.some(p=>p.reason.includes('Cruce'))")
     assert not page.locator('[data-action="confirm-enroll"]').is_enabled()
     page.locator(f'#grp-{g[0]["course_id"]}').select_option(str(g[1]['id']))
-    page.wait_for_function('state.data.draft.problems.length===0')
+    wait_for_state(page, 'state.data.draft.problems.length===0')
     page.locator('[data-action="confirm-enroll"]').click();page.locator('[data-action="modal-confirm"]').click()
-    page.wait_for_function("state.data.draft.confirmed.some(x=>x.code==='MAT-202')")
+    wait_for_state(page, "state.data.draft.confirmed.some(x=>x.code==='MAT-202')")
     route('agenda');page.locator('[data-action="agenda-new"]').click();page.locator('#ag-title').fill('Comprobar CRUZA')
     page.locator('#ag-date').fill('2026-11-13');page.locator('#agenda-form button[type="submit"]').click()
-    page.wait_for_function("state.data.agenda.some(x=>x.title==='Comprobar CRUZA')")
+    wait_for_state(page, "state.data.agenda.some(x=>x.title==='Comprobar CRUZA')")
     logout();login('DOCENTE','CLASE2026')
     teacher=page.evaluate('state.data.groups.find(g=>g.students.length)')
     st=teacher['students'][0];ev=st['evaluations'][0]
     page.locator('#teacher-group').select_option(str(teacher['id']))
     page.locator(f'#grade-{st["id"]}-{ev["id"]}').fill('4.7');page.locator(f'#reason-{st["id"]}').fill('Comprobación de evaluación')
     page.locator(f'[data-action="save-grade"][data-eval-id="{ev["id"]}"]').click()
-    page.wait_for_function('(id)=>state.data.groups.some(g=>g.students.some(s=>s.evaluations.some(e=>e.id===id&&e.grade===4.7)))',arg=ev['id'])
+    wait_for_state(page, '(id)=>state.data.groups.some(g=>g.students.some(s=>s.evaluations.some(e=>e.id===id&&e.grade===4.7)))',arg=ev['id'])
     logout();login('ADMIN','ADMIN2026')
     page.locator('[data-action="student-new"]').click()
     form=page.locator('#create-student-form');form.locator('[name="full_name"]').fill('Prueba de aprobación')
     form.locator('[name="username"]').fill('PRUEBAWEB')
     form.locator('[name="password"]').fill('ClaveLargaCorrecta2026PorSeguridad')
     form.locator('button[type="submit"]').click()
-    page.wait_for_function('state.data.users.some(u=>u.username==="PRUEBAWEB"&&u.status==="pending")')
+    wait_for_state(page, 'state.data.users.some(u=>u.username==="PRUEBAWEB"&&u.status==="pending")')
     uid=page.evaluate('state.data.users.find(u=>u.username==="PRUEBAWEB").id')
     page.locator(f'[data-action="user-status"][data-id="{uid}"][data-status="active"]').click()
     page.locator('[data-action="modal-confirm"]').click()
-    page.wait_for_function('state.data.users.some(u=>u.username==="PRUEBAWEB"&&u.status==="active")')
+    wait_for_state(page, 'state.data.users.some(u=>u.username==="PRUEBAWEB"&&u.status==="active")')
     logout();login('PRUEBAWEB','ClaveLargaCorrecta2026PorSeguridad')
     assert page.locator('.sidebar').is_visible()
+    logout()
+    assert not errors,errors
+    wait_for_state(page, 'Boolean(navigator.serviceWorker.controller)')
+    assert page.evaluate("""async () => {
+      const keys = await caches.keys();
+      const cache = await caches.open(keys.find(key => key.startsWith('cruza-public-game-')));
+      return (await cache.keys()).every(request => request.url.includes('/static/cruza-crucigrama.'));
+    }""")
+    context.set_offline(True)
+    page.get_by_role('link', name='Jugar al crucigrama').wait_for()
+    page.reload()
+    page.get_by_role('heading', name='Crucigrama del campus').wait_for()
+    page.locator('#cell-1').fill('X')
+    page.get_by_role('button', name='Comprobar').click()
+    assert page.locator('#cell-1').get_attribute('aria-invalid') == 'true'
+    page.get_by_role('button', name='Reiniciar').click()
+    assert page.locator('#cell-1').input_value() == ''
+    for position, letter in {1:'C', 6:'U', 10:'C', 11:'R', 12:'U', 13:'Z',
+                             14:'A', 16:'S', 19:'U', 21:'O', 24:'L', 29:'A'}.items():
+     page.locator(f'#cell-{position}').fill(letter)
+    page.get_by_role('button', name='Comprobar').click()
+    assert page.locator('#result').inner_text() == '¡Crucigrama resuelto!'
+    context.set_offline(False)
+    page.get_by_role('link', name='Volver al campus').click()
+    page.locator('#auth-user').wait_for(state='visible')
     assert not errors,errors
     assert not any(status>=500 for method,url,status in api_calls)
     context.close();browser.close()
    print(f'OK: recorrido Chromium/API real, {len(api_calls)} solicitudes, sin errores JS ni HTTP 5xx.')
   finally:
-   proc.terminate()
-   try:proc.wait(timeout=5)
-   except subprocess.TimeoutExpired:proc.kill()
+   stop_server(proc)
 
 if __name__=='__main__':main()

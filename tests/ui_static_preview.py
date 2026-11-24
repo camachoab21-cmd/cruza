@@ -19,7 +19,7 @@ with sync_playwright() as playwright:
         assert board.locator('button.board-tile[data-path]').count()==23
         assert page.locator('.map-kicker').inner_text().strip()=='MAPA INTERACTIVO'
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+2'),f"Overflow horizontal a {width}px"
-        page.get_by_role('button',name='MATRÍCULA').click()
+        page.get_by_role('button',name='MATRÍCULA',exact=True).click()
         assert page.locator('#preview-title').inner_text()=='Las piezas encajan.'
         tile=board.locator('.board-tile[data-path]').first
         tile.hover()

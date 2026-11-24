@@ -25,7 +25,8 @@ async function api(path,method='GET',body=null){
  if(method!=='GET' && state.csrf)options.headers['X-CSRF-Token']=state.csrf;
  if(body!==null){options.headers['Content-Type']='application/json';options.body=JSON.stringify(body)}
  let r;
- try{r=await fetch('/api'+path,options)}catch{throw Error('No hay conexión con el servidor local. Revisa que esté ejecutándose.')}
+ try{r=await fetch('/api'+path,options)}catch{window.dispatchEvent(new Event('cruza:connection-lost'));throw Error('No hay conexión con el servidor local. Revisa que esté ejecutándose.')}
+ window.dispatchEvent(new Event('cruza:connection-restored'));
  let value;
  try{value=await r.json()}catch{throw Error('El servidor respondió con un formato inesperado.')}
  if(!r.ok){if(r.status===401 && state.user){state.user=null;state.data=null;state.csrf=null;renderLogin()}
@@ -113,7 +114,7 @@ async function loginSubmit(e){e.preventDefault();if(state.busy)return;
 async function boot(){try{const data=await api('/session');state.user=data.user;state.csrf=data.csrf;
   if(state.user){state.page=roleMenu[state.user.role][0][0];await reloadData()}else renderLogin();
  }catch(err){root.innerHTML=`<div class="card" style="margin:12vh auto;max-width:600px"><h1>Sin conexión</h1><p>${escapeHtml(err.message)}</p>
- <button onclick="location.reload()">Reintentar</button></div>`}}
+ <a class="btn-ghost" href="/">Reintentar</a></div>`}}
 async function reloadData(){if(!state.user){renderLogin();return;}
  state.data=await api(state.user.role==='student'?'/student':state.user.role==='teacher'?'/teacher':'/admin');render();}
 function sideBar(){const menu=roleMenu[state.user.role];return `<aside class="sidebar" id="sidebar">${brand()}<div>
@@ -628,7 +629,7 @@ document.addEventListener('click',async e=>{
  }
  if(action==='print-schedule'){window.print();return;}
  if(action==='logout'){
-   try{await api('/logout','POST');state.user=null;state.csrf=null;state.data=null;localStorage.removeItem('cruza-theme');document.documentElement.dataset.theme='light';renderLogin();notify('Sesión cerrada.')}catch(err){notify(err.message)}return;
+   try{await api('/logout','POST');state.user=null;state.csrf=null;state.data=null;document.documentElement.dataset.theme='light';renderLogin();try{localStorage.removeItem('cruza-theme')}catch{}notify('Sesión cerrada.')}catch(err){notify(err.message)}return;
  }
  if(action==='find-course'){
   state.filterText=state.data.courses.find(x=>x.id==Number(b.dataset.courseId))?.code||'';
