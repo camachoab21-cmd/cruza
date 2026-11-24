@@ -94,14 +94,14 @@
     frame=0;
     if(document.hidden)return;
     // 40 FPS máximos para el pigmento: el cursor del ratón se mueve independientemente.
-    if(now-lastDraw<25){frame=requestAnimationFrame(render);return;}
+    if(now-lastDraw<16){frame=requestAnimationFrame(render);return;}
     lastDraw=now;
     ctx.clearRect(0,0,width,height);
-    segments=segments.filter(v=>now-v.t<3000);
-    dust=dust.filter(v=>now-v.t<1800);
+    segments=segments.filter(v=>now-v.t<1000);
+    dust=dust.filter(v=>now-v.t<700);
     ctx.lineCap='round';ctx.lineJoin='round';
     for(const s of segments){
-      const fade=Math.max(0,1-(now-s.t)/3000);
+      const fade=Math.max(0,1-(now-s.t)/1000);
       if(fade<=0)continue;
       const a=s.area;
       const clipped=a.w<width-1||a.h<height-1;
@@ -125,7 +125,7 @@
     // Las motas granuladas son ligeras: sin clip, filtros y save/restore por partícula.
     ctx.shadowBlur=0;
     for(const p of dust){
-      const fade=Math.max(0,1-(now-p.t)/1800);
+      const fade=Math.max(0,1-(now-p.t)/700);
       const elapsed=(now-p.t)*.013;
       const x=p.x+p.vx*elapsed,y=p.y+p.vy*elapsed,a=p.area;
       if(x<a.x||x>a.x+a.w||y<a.y||y>a.y+a.h)continue;
@@ -144,16 +144,28 @@
   }
   function paint(x,y,area){
     const now=performance.now();
-    if(!prior||now-prior.t>245){prior={x,y,t:now};return;}
+    if(!prior||now-prior.t>500){prior={x,y,t:now};return;}
     const dist=Math.hypot(x-prior.x,y-prior.y);
-    if(dist<1.5||dist>240){prior={x,y,t:now};return;}
-    walk+=dist;
-    const start=paletteAt(walk/77),end=paletteAt((walk+dist)/77+.22);
-    const gradient=ctx.createLinearGradient(prior.x,prior.y,x||prior.x+.01,y||prior.y+.01);
-    gradient.addColorStop(0,rgb(start));gradient.addColorStop(1,rgb(end));
+    if(dist<1.5){return;}
     const crayon=mode==='crayon';
-    segments.push({x:prior.x,y:prior.y,xx:x,yy:y,start,end,gradient,t:now,crayon,area});
-    if(segments.length>95)segments.splice(0,segments.length-95);
+    const maxStep=crayon?28:20;
+    const steps=Math.max(1,Math.min(24,Math.ceil(dist/maxStep)));
+    const stepDx=(x-prior.x)/steps;
+    const stepDy=(y-prior.y)/steps;
+    const stepDist=dist/steps;
+    let currX=prior.x,currY=prior.y;
+    for(let k=1;k<=steps;k++){
+      const nextX=k===steps?x:currX+stepDx;
+      const nextY=k===steps?y:currY+stepDy;
+      walk+=stepDist;
+      const start=paletteAt(walk/77),end=paletteAt((walk+stepDist)/77+.22);
+      const gradient=ctx.createLinearGradient(currX,currY,nextX||currX+.01,nextY||currY+.01);
+      gradient.addColorStop(0,rgb(start));gradient.addColorStop(1,rgb(end));
+      segments.push({x:currX,y:currY,xx:nextX,yy:nextY,start,end,gradient,t:now,crayon,area});
+      currX=nextX;
+      currY=nextY;
+    }
+    if(segments.length>380)segments.splice(0,segments.length-380);
     const count=crayon?7:4;
     for(let i=0;i<count;i++){
       const color=paletteAt((walk+i*10)/77);
@@ -162,7 +174,7 @@
         radius:.5+Math.random()*(crayon?2.2:1.45),t:now,color,area,
         star:Math.random()<(crayon?.15:.08),angle:Math.random()*6.28});
     }
-    if(dust.length>220)dust.splice(0,dust.length-220);
+    if(dust.length>300)dust.splice(0,dust.length-300);
     prior={x,y,t:now};
     if(!frame)frame=requestAnimationFrame(render);
   }
@@ -171,34 +183,30 @@
     const board=e.target.closest('.board-map');
     const onControl=tooInteractive(e)&&!board;
     boardChange(board);
-    if(onControl){hide();return;}
-    visible=true;boardActive=!!board;
-    cursor.style.left=e.clientX+'px';cursor.style.top=e.clientY+'px';
-    cursor.classList.add('is-visible');
-    cursor.classList.toggle('is-large',boardActive);
-    root.classList.add('cruza-art-cursor-on');
+    if(onControl){
+      visible=false;
+      root.classList.remove('cruza-art-cursor-on');
+      cursor.classList.remove('is-visible','is-large');
+    }else{
+      visible=true;boardActive=!!board;
+      cursor.style.left=e.clientX+'px';cursor.style.top=e.clientY+'px';
+      cursor.classList.add('is-visible');
+      cursor.classList.toggle('is-large',boardActive);
+      root.classList.add('cruza-art-cursor-on');
+    }
     lastPosition={x:e.clientX,y:e.clientY};
     if(board){
       const rect=board.getBoundingClientRect();
       board.style.setProperty('--cruza-x',((e.clientX-rect.left)/rect.width*100).toFixed(1)+'%');
       board.style.setProperty('--cruza-y',((e.clientY-rect.top)/rect.height*100).toFixed(1)+'%');
-      const stage=e.target.closest('.map-stage');
-      if(stage&&!e.target.closest('button,a,input,textarea,select')){
-        const b=stage.getBoundingClientRect(),padding=10;
-        const area={x:b.left+padding,y:b.top+padding,w:b.width-padding*2,h:b.height-padding*2};
-        if(e.clientX>=area.x&&e.clientX<=area.x+area.w&&e.clientY>=area.y&&e.clientY<=area.y+area.h){
-          paint(e.clientX,e.clientY,area);
-        }else prior=null;
-      }else prior=null;
+    }
+    // Dibuja el trazo continuo sobre una capa frontal (z-index 45), pasando
+    // por encima de textos, títulos grandes y tarjetas sin cortarse ni desaparecer.
+    const modal=e.target.closest('[role="dialog"],.dialog,.overlay');
+    if(!modal){
+      paint(e.clientX,e.clientY,{x:0,y:0,w:width,h:height});
     }else{
-      // El lápiz sigue dibujando sobre papel libre, sin cubrir controles ni texto.
-      // El tamaño grande continúa reservado exclusivamente para el crucigrama.
-      const blocked=e.target.closest('.auth-copy,.auth-hero-tiles,.brand,.auth-form-area,.sidebar,.topbar,.hint-bar,.card,.page-heading,form,nav,footer,table,article,button,a,input,textarea,select,[role="dialog"],[contenteditable="true"]');
-      const background=e.target.closest('.auth-art,.auth-scene,.workspace,.page,.shell');
-      const freeSurface=e.target.matches('.auth-art,.auth-scene,.auth-stars,.auth-star,.canvas-grid,.workspace,.page,.shell');
-      if(background&&freeSurface&&!blocked){
-        paint(e.clientX,e.clientY,{x:0,y:0,w:width,h:height});
-      }else prior=null;
+      prior=null;
     }
   }
   document.addEventListener('pointermove',onPointer,{passive:true});

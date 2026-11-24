@@ -16,7 +16,7 @@ def test_cut_partial_is_not_zero():
 def test_final_grade():
     e=[{'term':1,'weight':100,'grade':4.5},{'term':2,'weight':100,'grade':4},
        {'term':3,'weight':100,'grade':4.1}]
-    assert grade_summary(e)['final']==4.19
+    assert grade_summary(e)['final']==4.20
 
 def test_papa_last_attempt():
     a=[{'course_id':1,'period':'2025-1','grade':2.0,'credits':3,'attempt':1},

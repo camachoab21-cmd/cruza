@@ -1,7 +1,7 @@
 """Reglas académicas compartidas entre la API y las pruebas."""
 from decimal import Decimal, ROUND_HALF_UP
 
-CUT_WEIGHTS = {1: Decimal('0.30'), 2: Decimal('0.30'), 3: Decimal('0.40')}
+CUT_WEIGHTS = {1: Decimal('0.33'), 2: Decimal('0.33'), 3: Decimal('0.34')}
 PERIOD = '2026-2'
 MAX_CREDITS = 18
 

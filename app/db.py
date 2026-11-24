@@ -95,6 +95,14 @@ def init_db(seed=False):
             event TEXT NOT NULL,target TEXT NOT NULL,details TEXT NOT NULL);
         ''')
         if seed and not one(c,'SELECT id FROM users LIMIT 1'):seed_demo(c)
+        if one(c, "SELECT id FROM evaluations WHERE weight NOT IN (60, 30, 10) LIMIT 1"):
+            c.execute("DELETE FROM evaluations WHERE weight NOT IN (60, 30, 10)")
+        for row in allrows(c, 'SELECT id FROM groups'):
+            for term in (1, 2, 3):
+                for name, weight in [('Evaluación 60%', 60), ('Evaluación 30%', 30), ('Evaluación 10%', 10)]:
+                    if not one(c, "SELECT id FROM evaluations WHERE group_id=? AND term=? AND weight=?", (row['id'], term, weight)):
+                        c.execute("INSERT INTO evaluations(group_id,term,name,weight) VALUES(?,?,?,?)",
+                                  (row['id'], term, name, weight))
 
 def seed_demo(c):
     creds=[('ADMIN','Administración académica','admin','ADMIN2026','active'),
@@ -138,9 +146,9 @@ def seed_demo(c):
     c.execute('INSERT INTO drafts VALUES(?,?,?)',(student,json.dumps(draft),utc()))
     for row in allrows(c,'SELECT id FROM groups'):
         for term in (1,2,3):
-            for n in range(2):
+            for name, weight in [('Evaluación 60%', 60), ('Evaluación 30%', 30), ('Evaluación 10%', 10)]:
                 c.execute('INSERT INTO evaluations(group_id,term,name,weight) VALUES(?,?,?,?)',
-                  (row['id'],term,f'Evaluación {n+1}',50))
+                  (row['id'],term,name,weight))
     for code,period,grade,attempt in [
       ('DSI-101','2025-1',4.2,1),('DSI-102','2025-1',4.0,1),('MAT-101','2025-1',3.7,1),
       ('DSI-201','2025-2',4.4,1),('DSI-202','2025-2',4.1,1)]:

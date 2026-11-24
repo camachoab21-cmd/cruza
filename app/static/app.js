@@ -5,7 +5,7 @@ const state={user:null,csrf:null,data:null,page:'tablero',busy:false,loginShow:f
   draftMobile:'materias',filterText:'',filterType:'',filterSemester:'',calendarDate:'2026-11-11',
   agendaDone:false,teacherGroup:null,editReminder:null,courseSim:{},roleNavigation:false,
   ambientTool:'pencil',ambientEnabled:true,loginUser:'',loginPass:''};
-const roleMenu={student:[['tablero','Mi tablero'],['pensum','Pensum'],['inscripcion','Inscripción'],
+const roleMenu={student:[['tablero','Mi tablero'],['pensum','Pensum'],['inscripcion','Matrícula'],
  ['horario','Horario'],['calendario','Calendario'],['agenda','Mi agenda'],['notas','Notas'],
  ['asistencia','Asistencia'],['historial','Historial'],['perfil','Perfil']],
  teacher:[['notas','Notas'],['asistencia','Asistencia']],
@@ -199,7 +199,7 @@ function crossword(){const grid=new Map(),words=[
   return cell?`<button type="button" class="board-tile tone-${cell.tone}" data-number="${cell.number??''}" style="--tile-i:${i}" data-action="word" data-path="${cell.routes.join('|')}" data-hint="Casilla ${cell.letter}: ${cell.routes.join(', ')}" aria-label="Letra ${cell.letter}; ${cell.routes.join(' o ')}"><span class="tile-face">${cell.number!==null?`<span class="tile-number" aria-hidden="true">${cell.number}</span>`:'' }${cell.letter}</span></button>`:'<span class="board-tile void" aria-hidden="true"></span>'}).join('')}</div><div class="map-pencil" aria-hidden="true"><svg viewBox="0 0 94 136" xmlns="http://www.w3.org/2000/svg"><g transform="rotate(28 48 68)"><path d="M31 20 Q31 12 39 12 L57 12 Q64 12 64 20 L64 94 L48 126 L31 94 Z" fill="#f1a95e" stroke="#746b4b" stroke-width="2"/><path d="M39 12 L39 98 L48 126 L31 94 L31 20 Q31 12 39 12" fill="#f6d280"/><path d="M56 12 L56 98 L48 126 L64 94 L64 20 Q64 12 56 12" fill="#da9a62"/><path d="M31 92 L48 126 L64 92" fill="#e9cc9f" stroke="#92785b" stroke-width="2"/><path d="M43 116 L48 126 L53 116" fill="#343f37"/><rect x="31" y="12" width="33" height="15" rx="5" fill="#d8b5ef" stroke="#9980b2" stroke-width="2"/><path d="M31 29 H64" stroke="#ba915b" stroke-width="2"/></g></svg></div></div>
  <footer class="map-footer"><span>Explora una palabra para ver su ruta</span><span class="map-arrow" aria-hidden="true">↗</span></footer><canvas id="powder" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0"></canvas></section>`}
 function dashboard(){const d=state.data;const courses=d.draft.confirmed;const next=courses[0];
- return head('01 · HORIZONTAL','Tu semestre. <em>Todas las piezas.</em>',`Hola, ${escapeHtml(state.user.full_name)}. Cada palabra te guía al siguiente paso en el tablero.`,linkRoute('Inscribir materias ↗','inscripcion','btn-primary'))+
+ return head('01 · HORIZONTAL','Tu semestre. <em>Todas las piezas.</em>',`Hola, ${escapeHtml(state.user.full_name)}. Cada palabra te guía al siguiente paso en el tablero.`,linkRoute('Matricular materias ↗','inscripcion','btn-primary'))+
  `${crossword()}<section class="card dashboard-status">
  <div class="eyebrow">ESTADO ACTUAL</div><h2>Una palabra a la vez.</h2>
  <p class="muted">Las conexiones también se construyen con pequeños avances.</p>
@@ -212,9 +212,9 @@ function dashboard(){const d=state.data;const courses=d.draft.confirmed;const ne
  ${stat('PROMEDIO DEL PERÍODO',number(d.summary.papi),'Solo notas definitivas disponibles','peach')}</div>`;
 }
 function curriculum(){const d=state.data;const offered=new Set(d.groups.map(x=>x.course_id));const sems=[...new Set(d.courses.map(x=>x.semester))];
- return head('02 · VERTICAL','El plan de <em>tus piezas.</em>','Rutas académicas y asignaturas por semestre.',linkRoute('Ir a Inscripción →','inscripcion','btn-primary'))+
+ return head('02 · VERTICAL','El plan de <em>tus piezas.</em>','Rutas académicas y asignaturas por semestre.',linkRoute('Ir a Matrícula →','inscripcion','btn-primary'))+
  `<div class="semester-grid">${sems.map(s=>`<section class="card"><div class="eyebrow">SEMESTRE ${String(s).padStart(2,'0')}</div>
- <h2>Ruta <em>${s}.</em></h2><div class="list">${d.courses.filter(c=>c.semester===s).map(c=>`<div class="item"><div>
+ <h2>Semestre <em>${s}.</em></h2><div class="list">${d.courses.filter(c=>c.semester===s).map(c=>`<div class="item"><div>
  <div class="mon muted">${escapeHtml(c.code)} · ${c.credits} créditos</div><strong>${escapeHtml(c.name)}</strong>
  <div class="actions">${labelTag(c.category,tagCat(c.category))}${!offered.has(c.id)?labelTag('Sin grupos en 2026-2','pill-muted'):''}</div></div>
  ${offered.has(c.id)?btn('Localizar ↗','find-course','btn-mini',`data-course-id="${c.id}"`):''}</div>`).join('')}</div></section>`).join('')}</div>`;
@@ -261,7 +261,7 @@ function enrollment(){const d=state.data,selected=d.draft.selected;let courses=d
  btn('Añadir al borrador +','toggle-course','btn-lime btn-mini',`data-course-id="${c.id}"`)}</div>`:
  `<div class="notice">No se ofrecen grupos para esta materia durante 2026-2.</div>`}</article>`}).join('');
  const old=d.draft.confirmed.map(x=>({...x,id:x.group_id,code:x.group_code}));
- return head('03 · HORIZONTAL','Inscripción. <em>Las piezas encajan.</em>','Borrador y cruces de horario para el período.',
+ return head('03 · HORIZONTAL','Matrícula. <em>Las piezas encajan.</em>','Borrador y cruces de horario para el período.',
  linkRoute('Ver Pensum ↗','pensum'))+
  `<div class="between" style="margin-bottom:15px"><div class="row-left">${badges}</div><div class="actions">${btn('Descartar borrador','discard','btn-mini')}${btn('Confirmar matrícula ↗','confirm-enroll','btn-primary',`${d.draft.problems.length?'disabled title="Resuelve los conflictos"':''}`)}</div></div>
  ${errors?`<div class="list" style="margin-bottom:18px">${errors}</div>`:''}
@@ -274,7 +274,7 @@ function enrollment(){const d=state.data,selected=d.draft.selected;let courses=d
 }
 function schedule(){const arr=state.data.draft.confirmed.map(x=>({...x,id:x.group_id,code:x.group_code}));
  return head('04 · VERTICAL','Tu semana, <em>resuelta.</em>','Cuadrícula de clases y cruces de horario confirmados.',
- `<a href="/api/student/schedule.csv" class="btn btn-primary">Descargar CSV ↧</a>`)+
+ `<div class="row-left">${btn('Imprimir / Guardar PDF 🖨','print-schedule','btn btn-lime')}<a href="/api/student/schedule.csv" class="btn">Descargar CSV ↧</a></div>`)+
  `<div class="card"><div class="eyebrow">HORARIO VIGENTE / ${escapeHtml(state.data.summary.period_label)}</div>
  ${arr.length?timeGrid(arr):'<div class="notice">No tienes matrícula confirmada.</div>'}</div>`;
 }
@@ -325,7 +325,7 @@ function validHypothesis(value){
 function predictFinal(c1,c2,c3){
  const grades=[c1,c2,c3].map(validHypothesis);
  if(grades.some(x=>x===null))return null;
- return Math.round((grades[0]*.30+grades[1]*.30+grades[2]*.40+Number.EPSILON)*100)/100;
+ return Math.round((grades[0]*.33+grades[1]*.33+grades[2]*.34+Number.EPSILON)*100)/100;
 }
 function crosswordCalculator(all){
  if(!all||!all.length)return '';
@@ -341,11 +341,11 @@ function crosswordCalculator(all){
  <div class="word-tiles" aria-hidden="true">${codeTiles}</div></div>
  <div class="field" style="margin:0;min-width:min(200px,100%)"><label for="simulate-course" class="small">Materia a calcular</label>
  <select id="simulate-course">${all.map(x=>`<option value="${x.course_id}" ${x.course_id===selectedId?'selected':''}>${escapeHtml(x.name)}</option>`).join('')}</select></div></div>
- <p class="small muted">Simulación: puedes cambiar las tres notas hipotéticas. Los cortes pesan <strong>30 %, 30 % y 40 %</strong>. Nada de esto modifica las notas oficiales.</p>
+ <p class="small muted">Simulación: puedes cambiar las tres notas hipotéticas. Los cortes pesan <strong>33 %, 33 % y 34 %</strong>. Escala oficial de 0.0 a 5.0.</p>
  <div class="calc-equation">
- ${[1,2].map((term,i)=>`<label class="calc-tile"><span class="calc-num">0${term}</span><span class="calc-pct">CORTE ${term} · 30 %</span>
+ ${[1,2].map((term,i)=>`<label class="calc-tile"><span class="calc-num">0${term}</span><span class="calc-pct">CORTE ${term} · 33 %</span>
  <input class="calc-grade-input" aria-label="Nota del corte ${term} para la simulación" id="simulate-cut-${term}" type="number" min="0" max="5" step="0.1" inputmode="decimal" value="${[c1,c2][i]??''}" placeholder="—"></label><span class="calc-operator" aria-hidden="true">+</span>`).join('')}
- <label class="calc-tile unknown"><span class="calc-num">03 ?</span><span class="calc-pct">CORTE 3 · 40 %</span>
+ <label class="calc-tile unknown"><span class="calc-num">03 ?</span><span class="calc-pct">CORTE 3 · 34 %</span>
  <input class="calc-grade-input" aria-label="Nota del corte 3 para la simulación" type="number" min="0" max="5" step="0.1" inputmode="decimal" id="simulate-grade" value="${c3}"></label>
  <span class="calc-operator" aria-hidden="true">=</span>
  <div class="calc-tile result" aria-live="polite"><span class="calc-num">DEF</span><span class="calc-pct">DEFINITIVA ESTIMADA</span><span class="calc-val" id="simulate-result">${number(simulated)}</span></div>
@@ -357,36 +357,44 @@ function crosswordCalculator(all){
 }
 function updateSimulationFromInputs(){
  const cid=Number(document.getElementById('simulate-course')?.value);
- const cut1=document.getElementById('simulate-cut-1')?.value??'',cut2=document.getElementById('simulate-cut-2')?.value??'',cut3=document.getElementById('simulate-grade')?.value??'';
+ const in1=document.getElementById('simulate-cut-1'),in2=document.getElementById('simulate-cut-2'),in3=document.getElementById('simulate-grade');
+ [in1,in2,in3].forEach(inp=>{
+  if(inp&&inp.value!==''){
+   let n=parseFloat(inp.value);
+   if(n>5){inp.value='5';notify('La nota máxima es 5.0');}
+   else if(n<0){inp.value='0';notify('La nota mínima es 0.0');}
+  }
+ });
+ const cut1=in1?.value??'',cut2=in2?.value??'',cut3=in3?.value??'';
  state.courseSim={courseId:cid,cut1,cut2,grade:cut3};
  const output=document.getElementById('simulate-result');if(output)output.textContent=number(predictFinal(cut1,cut2,cut3));
  document.querySelectorAll('.calc-quick-tile').forEach(button=>button.classList.toggle('active',Number(button.dataset.grade)===Number(cut3)));
 }
 
-function gradesPage(){const d=state.data;const all=d.grades;const att=d.attendance||[];const absences=att.filter(x=>!x.present);
- const attByCourse=att.reduce((acc,cur)=>{(acc[cur.course]=acc[cur.course]||[]).push(cur);return acc},{});
+function gradesPage(){const d=state.data;const all=d.grades;const att=d.attendance||[];
  return head('05 · HORIZONTAL','Notas y Calificaciones. <em>Cada avance cuenta.</em>','Cada casilla resuelta completa tu mapa académico del período.')+
  `<div class="stats">${stat('PROMEDIO ACUMULADO',number(d.summary.papa),'Histórico + finales del período')}
  ${stat('PROMEDIO DEL PERÍODO',number(d.summary.papi),'Solo materias con nota definitiva','purple')}
  ${stat('CRÉDITOS CURSADOS',d.summary.credits_hist,'Créditos de historial','peach')}</div>
- <div class="courses">${all.map(c=>`<article class="course-grades-card"><div class="course-grades-head">
+ <div class="courses">${all.map(c=>{
+ const courseFallas=att.filter(x=>(x.course===c.name||x.course_code===c.code)&&!x.present).length;
+ return `<article class="course-grades-card"><div class="course-grades-head">
  <div><div class="eyebrow">${escapeHtml(c.code)} · ${c.credits} CRÉDITOS</div><h2 style="margin:5px 0 0">${escapeHtml(c.name)}</h2></div>
- <div class="def-tile" title="Nota definitiva"><span class="def-label">DEFINITIVA</span><span class="def-val">${number(c.summary.final)}</span></div></div>
- <div class="corte-tiles">${[1,2,3].map(t=>{const cut=c.summary.cuts[t],isComplete=cut.complete,pct=t===3?'40%':'30%';
+ <div class="row-left" style="gap:8px">
+   <div class="def-tile" title="Total de fallas en ${escapeHtml(c.name)}" style="min-width:62px;border-color:${courseFallas>0?'var(--danger)':'var(--line)'};background:${courseFallas>0?'color-mix(in srgb,var(--danger) 14%,var(--paper2))':'var(--paper2)'}">
+     <span class="def-label" style="color:${courseFallas>0?'var(--danger)':'var(--muted)'}">FALLAS</span>
+     <span class="def-val" style="color:${courseFallas>0?'var(--danger)':'var(--ink)'}">${courseFallas}</span>
+   </div>
+   <div class="def-tile" title="Nota definitiva"><span class="def-label">DEFINITIVA</span><span class="def-val">${number(c.summary.final)}</span></div>
+ </div></div>
+ <div class="corte-tiles">${[1,2,3].map(t=>{const cut=c.summary.cuts[t],isComplete=cut.complete,pct=t===3?'34%':'33%';
+ const tEvals=c.evaluations.filter(e=>e.term===t);
  return `<div class="corte-cell ${isComplete?'complete':'pending'}"><div class="corte-header"><span class="corte-tag">Corte ${t}</span>
- <span class="corte-pct">${pct}</span></div><div class="corte-val">${isComplete?number(cut.grade):'—'}</div></div>`;}).join('')}</div>
- <div class="tiny muted" style="font-family:Consolas,monospace;background:var(--wash);padding:4px 8px;border-radius:5px">Cada corte combina las evaluaciones y porcentajes configurados para la asignatura; una nota pendiente no equivale a cero.</div>
- <div class="corte-evals">${c.evaluations.map(e=>`${escapeHtml(e.name)}: <strong>${e.grade===null?'Pendiente':number(e.grade)}</strong>`).join(' &nbsp;·&nbsp; ')}</div>
- </article>`).join('')}</div>
- ${crosswordCalculator(all)}
- <section class="card canvas-grid" style="margin-top:24px"><div class="between"><div><div class="eyebrow">CONTROL DE ASISTENCIAS E INASISTENCIAS</div><h2 style="margin:4px 0 0">Presencia <em>en clase.</em></h2></div>
- <div class="row-left"><span class="pill ${absences.length?'danger':'ok'}">${absences.length} ${absences.length===1?'inasistencia':'inasistencias'} registradas</span></div></div>
- ${att.length?`<div class="attendance-summary">${Object.entries(attByCourse).map(([courseName,rows])=>{
- const courseAbs=rows.filter(r=>!r.present).length;
- return `<div class="attendance-card ${courseAbs?'has-absence':''}"><div class="between"><strong>${escapeHtml(courseName)}</strong>
- ${courseAbs?`<span class="absence-pill">⚠️ ${courseAbs} ${courseAbs===1?'falta':'faltas'}</span>`:`<span class="pill ok">Sin faltas</span>`}</div>
- <div class="attendance-tiles">${rows.map(r=>`<span class="tile-badge ${r.present?'presente':'ausente'}" title="${escapeHtml(r.day)}: ${r.present?'Presente':'Ausente'}">${r.present?'P':'A'}</span>`).join('')}</div></div>`;
- }).join('')}</div>`:'<div class="notice">No hay registros de asistencia para el período vigente.</div>'}</section>`;
+ <span class="corte-pct">${pct}</span></div><div class="corte-val">${isComplete?number(cut.grade):'—'}</div>
+ ${tEvals.length?`<div class="corte-subevals" style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-top:6px;font-size:.72rem;color:var(--muted)">${tEvals.map(e=>`<span>${e.weight}%: <strong>${e.grade===null?'—':number(e.grade)}</strong></span>`).join(' · ')}</div>`:''}
+ </div>`;}).join('')}</div>
+ </article>`;}).join('')}</div>
+ ${crosswordCalculator(all)}`;
 }
 function studentAttendance(){const rows=state.data.attendance||[];
  return head('08 · VERTICAL','Asistencia. <em>Presencia en cada clase.</em>','Registro de asistencias y ausencias del período actual.')+
@@ -618,8 +626,9 @@ document.addEventListener('click',async e=>{
  if(action==='toggle-hints'){
    const el=document.getElementById('hint');if(!el)return;el.hidden=!el.hidden;localStorage.setItem('cruza-hints',el.hidden?'0':'1');b.setAttribute('aria-pressed',String(!el.hidden));return;
  }
+ if(action==='print-schedule'){window.print();return;}
  if(action==='logout'){
-   try{await api('/logout','POST');state.user=null;state.csrf=null;state.data=null;renderLogin();notify('Sesión cerrada.')}catch(err){notify(err.message)}return;
+   try{await api('/logout','POST');state.user=null;state.csrf=null;state.data=null;localStorage.removeItem('cruza-theme');document.documentElement.dataset.theme='light';renderLogin();notify('Sesión cerrada.')}catch(err){notify(err.message)}return;
  }
  if(action==='find-course'){
   state.filterText=state.data.courses.find(x=>x.id==Number(b.dataset.courseId))?.code||'';
@@ -659,8 +668,16 @@ document.addEventListener('click',async e=>{
   updateSimulationFromInputs();state.courseSim.grade=score;render();return;
  }
  if(action==='save-grade'){
-  const sid=Number(b.dataset.studentId),eid=Number(b.dataset.evalId);const val=document.getElementById(`grade-${sid}-${eid}`).value;
-  if(val!==''&&(!Number.isFinite(Number(val))||Number(val)<0||Number(val)>5))return notify('Nota fuera de la escala 0–5.');
+  const sid=Number(b.dataset.studentId),eid=Number(b.dataset.evalId);const input=document.getElementById(`grade-${sid}-${eid}`);
+  const val=input?input.value.trim():'';
+  if(val!==''){
+    const num=Number(val);
+    if(!Number.isFinite(num)||num<0||num>5){
+      if(num>5&&input)input.value='5';
+      if(num<0&&input)input.value='0';
+      return notify('La nota debe estar entre 0.0 y 5.0.');
+    }
+  }
   await changeServer('/teacher/grade','PUT',{student_id:sid,evaluation_id:eid,grade:val===''?null:Number(val),reason:document.getElementById(`reason-${sid}`)?.value||''});return;
  }
  if(action==='attendance'){
@@ -704,7 +721,22 @@ document.addEventListener('change',async e=>{
  }
 });
 document.addEventListener('input',e=>{
- if(['simulate-grade','simulate-cut-1','simulate-cut-2'].includes(e.target.id)){updateSimulationFromInputs();return;}
+ if(['simulate-grade','simulate-cut-1','simulate-cut-2'].includes(e.target.id)){
+  if(e.target.value!==''){
+   const n=parseFloat(e.target.value);
+   if(n>5){e.target.value='5';notify('La nota máxima es 5.0');}
+   else if(n<0){e.target.value='0';notify('La nota mínima es 0.0');}
+  }
+  updateSimulationFromInputs();return;
+ }
+ if(e.target.id&&e.target.id.startsWith('grade-')){
+  if(e.target.value!==''){
+   const n=parseFloat(e.target.value);
+   if(n>5){e.target.value='5';notify('La nota máxima es 5.0');}
+   else if(n<0){e.target.value='0';notify('La nota mínima es 0.0');}
+  }
+  return;
+ }
  if(e.target.id==='course-search'){state.filterText=e.target.value;
   // Keep focus and caret by replacing only cards (avoid rerendering the whole form).
   const list=document.querySelector('.courses');if(list){
@@ -743,8 +775,7 @@ document.addEventListener('pointermove',e=>{
 // Day/night preference: entirely local and not a security-sensitive setting.
 function toggleTheme(){const next=document.documentElement.dataset.theme==='dark'?'light':'dark';
  document.documentElement.dataset.theme=next;localStorage.setItem('cruza-theme',next);notify(next==='dark'?'Modo noche activado':'Modo día activado');}
-function applyTheme(){const saved=localStorage.getItem('cruza-theme');document.documentElement.dataset.theme=
-  saved||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');}
+function applyTheme(){const saved=localStorage.getItem('cruza-theme');document.documentElement.dataset.theme=saved||'light';}
 function toggleTool(){
  state.ambientTool=state.ambientTool==='pencil'?'crayon':'pencil';
  window.CruzaTools?.setMode(state.ambientTool);

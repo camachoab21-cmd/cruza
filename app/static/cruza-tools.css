@@ -21,7 +21,7 @@ html.cruza-art-cursor-on .board-map,html.cruza-art-cursor-on .board-map *,
 html.cruza-art-cursor-on .map-stage,html.cruza-art-cursor-on .map-stage *{cursor:none!important}
 .cruza-pigment-layer{
  position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;
- z-index:18!important;pointer-events:none!important;opacity:.92;
+ z-index:45!important;pointer-events:none!important;opacity:.95;
 }
 .board-map .map-pencil{
  opacity:1;transition:opacity .22s ease,filter .25s ease;

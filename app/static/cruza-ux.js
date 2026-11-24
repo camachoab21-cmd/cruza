@@ -3,7 +3,7 @@
   'use strict';
   const html=document.documentElement;
   const app=document.getElementById('app');
-  const levels=[0.9,1,1.12,1.2];
+  const levels=[0.85,1,1.25];
   const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
   function savedScale(){
     try {return Number(localStorage.getItem('cruza-font-scale'))||1;} catch {return 1;}
@@ -243,9 +243,9 @@
       wrapper.className='cruza-font-controls';
       wrapper.innerHTML='<button type="button" class="btn-mini cruza-font-trigger" data-font-trigger aria-label="Ajustar tamaño de letra" aria-haspopup="true" aria-expanded="false" title="Tamaño de letra">A<span aria-hidden="true">±</span></button>'+
         '<div class="cruza-font-menu" data-font-menu hidden role="group" aria-label="Tamaño de letra">'+
-        '<button type="button" data-font-choice="0.9" aria-label="Disminuir tamaño de letra">A−</button>'+
+        '<button type="button" data-font-choice="0.85" aria-label="Disminuir tamaño de letra">A−</button>'+
         '<button type="button" data-font-choice="1" aria-label="Tamaño de letra normal">A</button>'+
-        '<button type="button" data-font-choice="1.12" aria-label="Aumentar tamaño de letra">A+</button>'+
+        '<button type="button" data-font-choice="1.25" aria-label="Aumentar tamaño de letra">A+</button>'+
         '</div>';
       const theme=controls.querySelector('[data-action="theme"]');
       if(theme)controls.insertBefore(wrapper,theme);else controls.prepend(wrapper);

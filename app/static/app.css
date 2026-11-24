@@ -1,9 +1,9 @@
 :root{
-  color-scheme:light;--paper:#f5f3ea;--paper2:#fffcf5;--ink:#252d27;--muted:#596359;--line:#d8ddcb;
+  color-scheme:light;--paper:#f5f3ea;--paper2:#fffcf5;--ink:#101f2b;--muted:#2c404f;--line:#d8ddcb;
   --lime:#d5ee8a;--purple:#d7c8ef;--peach:#f5c39d;--danger:#a43c35;--ok:#376b43;
-  --workspace-grid:rgba(93,124,83,.105);--glass:rgba(255,253,244,.82);--shadow:0 12px 45px rgba(43,54,44,.085);--wash:rgba(230,235,213,.60);
+  --workspace-grid:rgba(85,120,75,.24);--glass:rgba(255,253,244,.82);--shadow:0 12px 45px rgba(43,54,44,.085);--wash:rgba(230,235,213,.60);
 }
-[data-theme=dark]{color-scheme:dark;--paper:#151e1b;--paper2:#1c2924;--ink:#eff5dd;--muted:#b3c0b0;--line:#405349;
+[data-theme=dark]{color-scheme:dark;--paper:#151e1b;--paper2:#1c2924;--ink:#ffffff;--muted:#d5e5d7;--line:#405349;
  --lime:#99be59;--purple:#776b93;--peach:#c78c6e;--danger:#ffa2a0;--ok:#a2edab;
  --workspace-grid:rgba(157,177,151,.085);--glass:rgba(24,36,30,.86);--shadow:0 12px 45px rgba(0,0,0,.21);--wash:rgba(48,67,54,.6)}
 *{box-sizing:border-box}
@@ -17,7 +17,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 button:disabled{opacity:.48;cursor:not-allowed}
 a{color:inherit}h1,h2,h3,p{margin-top:0}p{line-height:1.65}h1,h2,h3{letter-spacing:-.045em}h1{font-weight:640;font-size:clamp(2.25rem,5vw,4.7rem);line-height:1.07}h2{font-size:clamp(1.45rem,2.5vw,2.1rem);line-height:1.18}h3{font-size:1.12rem;line-height:1.32}
 em{font-family:Georgia,serif;font-weight:400}
-#ambient-canvas{position:fixed;inset:0;z-index:-1;pointer-events:none;max-width:100vw;max-height:100vh}
+#ambient-canvas{position:fixed;inset:0;z-index:45;pointer-events:none;max-width:100vw;max-height:100vh}
 #app{position:relative;z-index:0;min-height:100vh}
 .mon{font-family:Consolas,'Courier New',monospace;font-size:.76rem;letter-spacing:.07em}
 .eyebrow{text-transform:uppercase;font-family:Consolas,'Courier New',monospace;letter-spacing:.19em;font-size:.7rem;color:var(--muted)}
@@ -226,7 +226,18 @@ input:focus,textarea:focus,select:focus{border-color:#889c58}
 @media(max-width:900px){.auth-scene{grid-template-columns:1fr}.auth-art{padding:24px 22px 14px;border:0;min-height:auto;gap:5px}.auth-copy h1{font-size:3.45rem;margin:15px 0 9px}.auth-copy p{font-size:.93rem;margin:0}.auth-hero-tiles,.auth-art>.eyebrow{display:none}.auth-form-area{padding:12px 18px 70px}.auth-form-card{padding:21px}.auth-form-card h2{font-size:1.5rem}.shell{display:block}.sidebar{position:fixed;left:0;bottom:0;top:0;transform:translateX(-103%);transition:transform .3s;width:min(270px,85vw);z-index:30;box-shadow:var(--shadow)}.sidebar.open{transform:translateX(0)}.mobile-menu{display:inline-flex}.workspace{padding:15px 16px 80px}.topbar{margin-bottom:20px}.topbar .name{display:none}.stats,.grid-3{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-2{grid-template-columns:1fr}.board{min-height:300px}}
 @media(max-width:600px){.courses,.semester-grid,.grid-3,.stats{grid-template-columns:1fr}.card{padding:18px}.page-heading{display:block}.page-heading h1{font-size:2.35rem}.page-heading .actions{margin-top:15px}.topbar .controls button{padding:9px}.stair-grid span{font-size:18px}.board-tiles{grid-template-columns:repeat(9,26px);grid-template-rows:repeat(9,26px);gap:2px}.board-clues{grid-template-columns:1fr 1fr}.board{padding:17px}.form-grid{grid-template-columns:1fr}.auth-tile{flex-basis:25px;min-width:25px;max-width:42px;height:51px}.auth-tiles{gap:3px}.calendar{gap:4px}.cal-day{min-height:46px;padding:5px;font-size:.82rem}.cal-day.corner-pending:after,.cal-day.corner-overdue:after,.cal-day.corner-done:after{width:20px;height:20px}.dialog{padding:18px}.grade-editor{grid-template-columns:1fr 1fr}.toast-region{right:10px;bottom:55px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
-@media print{#ambient-canvas,.sidebar,.topbar,.hint-bar,.toast-region,.actions,button{display:none!important}.shell{display:block}.workspace{max-width:none;padding:0}.card{break-inside:avoid;box-shadow:none}}
+@media print{
+  #ambient-canvas,#preview-ink-canvas,#cruza-art-cursor,.sidebar,.topbar,.hint-bar,.toast-region,.actions,button,.btn,a.btn,.mobile-menu{display:none!important}
+  body{background:#fff!important;color:#000!important;font-size:11pt}
+  .shell{display:block!important}
+  .workspace{max-width:none!important;padding:0!important;background:none!important}
+  .workspace:before{display:none!important}
+  .card{break-inside:avoid;box-shadow:none!important;border:1px solid #bbb!important;background:#fff!important;padding:15px!important}
+  .schedule-table{width:100%!important;border-collapse:collapse!important}
+  .schedule-table th, .schedule-table td{border:1px solid #bbb!important;padding:6px!important;color:#000!important}
+  .class-block{background:#f0f4ea!important;color:#000!important;border-left:3px solid #5a7d3c!important}
+  .class-block strong{color:#000!important}
+}
 
 /* Controlled crossword inputs: animations never expand the login form vertically. */
 .auth-tiles{flex-wrap:nowrap;overflow:visible;min-height:57px}
@@ -252,7 +263,7 @@ input:focus,textarea:focus,select:focus{border-color:#889c58}
 }
 
 /* Keep the paper-grid metaphor subtle, particularly at night. */
-.canvas-grid{background-image:linear-gradient(color-mix(in srgb,var(--line) 32%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--line) 32%,transparent) 1px,transparent 1px)}
+.canvas-grid{background-image:linear-gradient(color-mix(in srgb,var(--line) 72%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--line) 72%,transparent) 1px,transparent 1px)}
 /* Respect native hiding when the course card is a flex container. */
 .course-card[hidden]{display:none!important}
 /* Original crossword effect: active route lifts, other pieces gently settle. */
@@ -436,7 +447,7 @@ input:focus,textarea:focus,select:focus{border-color:#889c58}
  filter:drop-shadow(0 12px 9px rgba(68,83,61,.16))}
 .map-pencil svg{display:block;width:100%;height:100%;max-width:100%}
 @keyframes pencil-float{0%,100%{transform:translate3d(0,0,0) rotate(-7deg)}50%{transform:translate3d(9px,-8px,0) rotate(3deg)}}
-#preview-ink-canvas{position:fixed;inset:0;z-index:2;pointer-events:none;width:100%;height:100%;opacity:.90}
+#preview-ink-canvas{position:fixed;inset:0;z-index:45;pointer-events:none;width:100%;height:100%;opacity:.95}
 .preview-shell{position:relative;z-index:1}
 @media(max-width:700px){.map-pencil{width:54px;height:69px;left:5%;bottom:8%;opacity:.75}}
 @media(prefers-reduced-motion:reduce){
