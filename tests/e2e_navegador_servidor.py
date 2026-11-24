@@ -62,7 +62,19 @@ def main():
     def login(name,pwd):
      page.locator('#auth-user').fill(name);page.locator('#auth-pass').fill(pwd);page.locator('#login-button').click();page.wait_for_selector('.sidebar',timeout=14000)
     def route(key):page.locator(f'.sidebar [data-route="{key}"]').click()
-    def logout():page.locator('.sidebar [data-action="logout"]').click();page.wait_for_selector('#auth-user')
+    def logout():
+     page.locator('.sidebar [data-action="logout"]').click()
+     try:
+      page.wait_for_selector('#auth-user',timeout=35000)
+     except Exception as exc:
+      details={
+       'last_api_calls':api_calls[-8:],
+       'errors':errors[-6:],
+       'notification':page.locator('.toast').all_text_contents(),
+       'user':page.evaluate("state.user?.username||null"),
+       'csrf_present':page.evaluate("Boolean(state.csrf)"),
+      }
+      raise AssertionError(f'El cierre de sesión no abrió el acceso: {details}') from exc
     login('ESTUDIANTE','CRUZA2026');route('pensum');assert page.locator('.page-heading').is_visible()
     route('inscripcion');g=page.evaluate("state.data.groups.filter(g=>g.course_code==='MAT-202')")
     page.locator(f'[data-action="toggle-course"][data-course-id="{g[0]["course_id"]}"]').click()
